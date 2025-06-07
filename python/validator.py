@@ -6,7 +6,10 @@ import re
 from typing import Any, Dict, List
 from urllib.parse import urlparse
 
-from .meta_types import ValidationResult, Coordinate, DataPoint, MapData
+try:
+    from .meta_types import ValidationResult, Coordinate, DataPoint, MapData
+except ImportError:
+    from meta_types import ValidationResult, Coordinate, DataPoint, MapData
 
 
 def validate_coordinate(coord: Dict[str, Any]) -> List[str]:
@@ -168,4 +171,41 @@ def validate_new_data_point(point: Dict[str, Any]) -> ValidationResult:
     return ValidationResult(
         valid=len(errors) == 0,
         errors=errors if errors else None
-    ) 
+    )
+
+
+def validate_for_backend(data: Any) -> ValidationResult:
+    """
+    为后端API优化的验证函数
+    提供更详细的错误信息和额外的检查
+    """
+    # 先进行基础验证
+    basic_result = validate_map_data(data)
+    if not basic_result.valid:
+        return basic_result
+    
+    # 额外的后端特定检查
+    additional_errors = []
+    
+    # 检查数据点数量限制
+    if isinstance(data, dict) and 'data' in data:
+        data_points = data['data']
+        if len(data_points) > 1000:  # 限制数据点数量
+            additional_errors.append(f"数据点数量不能超过1000个，当前有{len(data_points)}个")
+        
+        # 检查重复的名称
+        names = [point.get('name', '').strip() for point in data_points if isinstance(point, dict) and point.get('name', '').strip()]
+        if len(names) != len(set(names)):
+            additional_errors.append("数据点名称不能重复")
+    
+    # 检查地图名称长度
+    if isinstance(data, dict) and 'name' in data:
+        name = data['name']
+        if len(name) > 200:
+            additional_errors.append(f"地图名称不能超过200个字符，当前{len(name)}个字符")
+    
+    if additional_errors:
+        all_errors = (basic_result.errors or []) + additional_errors
+        return ValidationResult(valid=False, errors=all_errors)
+    
+    return basic_result 
