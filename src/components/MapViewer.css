@@ -1,0 +1,833 @@
+/* MapViewer 组件样式 - 统一宽度控制和响应式设计 */
+
+/* CSS变量定义 */
+:root {
+  --primary-color: #1976d2;
+  --primary-light: #e3f2fd;
+  --secondary-color: #f57c00;
+  --secondary-light: #fff3e0;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-light: #999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --border-color: #e5e5e5;
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --radius-small: 6px;
+  --radius-medium: 8px;
+  --radius-large: 12px;
+  --transition: all 0.2s ease;
+  
+  /* 布局变量 - 统一控制 */
+  --container-max-width: 100vw;
+  --container-height: 100vh;
+  --header-height: 10vh;
+  --header-min-height: 60px;
+  --header-expanded-max: 50vh;
+  --content-height: 45vh;
+  --detail-height: 35vh;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+}
+
+/* 移动端变量覆盖 */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 12vh;
+    --header-expanded-max: 45vh;
+    --content-height: 43vh;
+    --detail-height: 35vh;
+    --spacing-lg: 12px;
+    --spacing-xl: 16px;
+  }
+}
+
+/* 基础重置 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 主容器 - 统一宽度控制入口 */
+.container {
+  /* 尺寸控制 */
+  width: var(--container-max-width);
+  max-width: var(--container-max-width);
+  height: var(--container-height);
+  max-height: var(--container-height);
+  
+  /* 布局 */
+  display: flex;
+  flex-direction: column;
+  
+  /* 外观 */
+  background-color: var(--bg-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  
+  /* 控制 */
+  overflow: hidden;
+  position: relative;
+}
+
+/* 内部组件宽度继承 - 统一控制 */
+.container > *,
+.container .header-section,
+.container .content-section,
+.container .detail-section,
+.container .tabs-container,
+.container .tab-content,
+.container .map-container,
+.container .tmap-container,
+.container .points-list {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* 强制宽度继承 - 解决异步加载宽度问题 */
+.tabs-container,
+.tab-content,
+.map-container,
+.points-list {
+  min-width: 0 !important;
+  flex-basis: 0 !important;
+  flex-grow: 1 !important;
+}
+
+/* 强制所有内容区域正确继承宽度 */
+.content-section * {
+  box-sizing: border-box !important;
+}
+
+.tabs-container * {
+  max-width: 100% !important;
+}
+
+/* Tab内容强制宽度更新 */
+.tab-content > * {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.tab-content {
+  display: flex;
+}
+
+/* 遮罩层 */
+.mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition);
+}
+
+.mask.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 第一个区域：顶部信息栏和筛选器 */
+.header-section {
+  /* 继承宽度，控制高度 */
+  height: var(--header-height);
+  min-height: var(--header-min-height);
+  flex-shrink: 0;
+  
+  /* 布局 */
+  display: flex;
+  flex-direction: column;
+  
+  /* 外观 */
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  
+  /* 动画 */
+  transition: var(--transition);
+  
+  position: relative;
+}
+
+.header-section.expanded {
+  height: auto;
+  max-height: var(--header-expanded-max);
+  overflow-y: auto;
+}
+
+.header-bar {
+  /* 继承宽度 */
+  width: 100%;
+  height: var(--header-min-height);
+  flex-shrink: 0;
+  
+  /* 布局 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  /* 间距 */
+  padding: 0 var(--spacing-lg);
+}
+
+.header-title {
+  flex: 1;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expand-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--bg-secondary);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.expand-btn:hover {
+  background-color: var(--border-color);
+}
+
+.chevron {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+}
+
+.chevron.up {
+  transform: rotate(180deg);
+}
+
+/* 筛选器容器 */
+.filter-container {
+  /* 继承宽度 */
+  width: 100%;
+  flex: 1;
+  
+  /* 布局 */
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  
+  /* 外观 */
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+.filter-category {
+  margin-bottom: var(--spacing-lg);
+}
+
+.filter-category:last-child {
+  margin-bottom: 0;
+}
+
+.filter-row {
+  margin-bottom: var(--spacing-sm);
+}
+
+.filter-category-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.filter-item {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: 20px;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.filter-item.inclusive {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.filter-item.inclusive.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.filter-item.exclusive {
+  background-color: var(--secondary-light);
+  color: var(--secondary-color);
+}
+
+.filter-item.exclusive.active {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.filter-reset-btn {
+  width: 100%;
+  margin-top: var(--spacing-lg);
+  padding: 10px var(--spacing-xl);
+  background-color: #6c757d;
+  color: white;
+  border-radius: var(--radius-small);
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.filter-reset-btn:hover {
+  background-color: #5a6268;
+}
+
+/* 第二个区域：地图和列表双Tab */
+.content-section {
+  /* 继承宽度，控制高度 */
+  height: var(--content-height);
+  flex-shrink: 0;
+  
+  /* 布局 */
+  display: flex;
+  flex-direction: column;
+  
+  /* 外观 */
+  background-color: var(--bg-primary);
+  
+  /* 控制 */
+  overflow: hidden;
+}
+
+.tabs-container {
+  /* 继承宽度和高度 */
+  width: 100%;
+  height: 100%;
+  
+  /* 布局 */
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-headers {
+  /* 继承宽度 */
+  width: 100%;
+  flex-shrink: 0;
+  
+  /* 布局 */
+  display: flex;
+  
+  /* 外观 */
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.tab-header {
+  flex: 1;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  position: relative;
+}
+
+.tab-header.active {
+  color: var(--primary-color);
+  background-color: var(--bg-primary);
+}
+
+.tab-header.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--primary-color);
+}
+
+.tab-content {
+  /* 继承宽度，占据剩余空间 */
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  
+  /* 控制 */
+  overflow: hidden;
+  
+  /* 确保立即响应父容器宽度变化 */
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* 地图容器 */
+.map-container {
+  /* 继承宽度和高度 */
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  
+  /* 布局 */
+  position: relative;
+  
+  /* 外观 */
+  background-color: #f0f0f0;
+}
+
+/* 腾讯地图组件样式 */
+.map-container .tmap-container {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* 强制腾讯地图响应容器变化 */
+.map-container .tmap-container > * {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.map-container .tmap-zoom-control-box {
+  position: absolute !important;
+  top: var(--spacing-xl) !important;
+  right: var(--spacing-xl) !important;
+  background-color: var(--bg-primary) !important;
+  border-radius: var(--radius-small) !important;
+  box-shadow: var(--shadow-light) !important;
+  border: none !important;
+}
+
+/* 加载状态 */
+.loading-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-md);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* 点位列表 */
+.points-list {
+  /* 继承宽度和高度 */
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  
+  /* 布局 */
+  padding: var(--spacing-sm);
+  
+  /* 控制 */
+  overflow-y: auto;
+}
+
+.point-item {
+  /* 继承宽度 */
+  width: 100%;
+  
+  /* 布局 */
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  
+  /* 外观 */
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-medium);
+  
+  /* 交互 */
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.point-item:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
+.point-item.active {
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+.point-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.point-index {
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-right: var(--spacing-xs);
+}
+
+.point-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.point-tag {
+  background-color: #f0f0f0;
+  color: var(--text-secondary);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-large);
+  font-size: 12px;
+}
+
+/* 聚合列表 */
+.cluster-list {
+  background-color: var(--bg-secondary);
+}
+
+.cluster-header {
+  /* 继承宽度 */
+  width: 100%;
+  
+  /* 布局 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  
+  /* 外观 */
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cluster-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.cluster-exit-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: #6c757d;
+  color: white;
+  border-radius: var(--radius-small);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.cluster-exit-btn:hover {
+  background-color: #5a6268;
+}
+
+.close-icon {
+  font-size: 16px;
+}
+
+.cluster-item {
+  background-color: var(--bg-primary);
+}
+
+.empty-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* 第三个区域：点位详情 */
+.detail-section {
+  /* 继承宽度，控制高度 */
+  width: 100%;
+  height: var(--detail-height);
+  flex-shrink: 0;
+  
+  /* 外观 */
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  
+  /* 控制 */
+  overflow-y: auto;
+}
+
+.detail-container {
+  /* 继承宽度 */
+  width: 100%;
+  
+  /* 布局 */
+  padding: var(--spacing-lg);
+}
+
+.detail-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.detail-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.detail-icon {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.detail-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.detail-text.clickable {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.detail-text.clickable:hover {
+  color: var(--primary-color);
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.detail-tag {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-large);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.detail-intro {
+  padding: var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-small);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.navigation-container {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-lg);
+}
+
+.navigation-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px var(--spacing-xl);
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 25px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.navigation-pill:hover {
+  background-color: #1565c0;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+.navigation-icon {
+  font-size: 16px;
+}
+
+.empty-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+/* 响应式设计 */
+
+/* 平板端优化 */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .header-title {
+    font-size: 17px;
+  }
+  
+  .tab-header {
+    font-size: 15px;
+    padding: 10px var(--spacing-md);
+  }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 16px;
+  }
+  
+  .tab-header {
+    font-size: 14px;
+    padding: 10px var(--spacing-md);
+  }
+  
+  .point-item {
+    padding: 10px var(--spacing-md);
+  }
+  
+  .detail-container {
+    padding: var(--spacing-md);
+  }
+  
+  .map-controls {
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+  }
+}
+
+/* 小屏移动端优化 */
+@media (max-width: 480px) {
+  :root {
+    --spacing-lg: 10px;
+    --spacing-xl: 12px;
+  }
+  
+  .filter-container {
+    padding: var(--spacing-md);
+  }
+  
+  .filter-list {
+    gap: var(--spacing-xs);
+  }
+  
+  .filter-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 11px;
+  }
+  
+  .map-controls {
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+  }
+  
+  .zoom-controls {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+}
+
+/* 超大屏幕优化 */
+@media (min-width: 1440px) {
+  :root {
+    --container-max-width: 1440px;
+  }
+  
+  .container {
+    margin: 0 auto;
+    box-shadow: var(--shadow-medium);
+  }
+}
+
+/* 横屏移动端优化 */
+@media (max-height: 600px) and (orientation: landscape) {
+  :root {
+    --header-height: 15vh;
+    --content-height: 50vh;
+    --detail-height: 30vh;
+  }
+}
+
+/* 重置按钮样式 - 参考Map.css */
+.square-container {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+.reset-button {
+  position: absolute;
+  bottom: 0;
+  font-size: 16px;
+  right: 0;
+  margin: 10px 30px 20px;
+  background-color: white;
+  border: 0px solid #ccc;
+  padding: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1001;
+}

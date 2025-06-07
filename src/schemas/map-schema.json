@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meta-map.schema.json",
+  "title": "Meta Map Data Schema",
+  "description": "统一地图数据格式的 JSON Schema",
+  "type": "object",
+  "required": ["name", "center", "data"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "地图的唯一标识符"
+    },
+    "name": {
+      "type": "string",
+      "description": "地图名称",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "地图描述"
+    },
+    "origin": {
+      "type": "string",
+      "description": "数据来源"
+    },
+    "center": {
+      "type": "object",
+      "description": "地图中心坐标",
+      "required": ["lat", "lng"],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90,
+          "description": "纬度"
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180,
+          "description": "经度"
+        }
+      },
+      "additionalProperties": false
+    },
+    "zoom": {
+      "type": "array",
+      "description": "缩放级别配置 [默认, 最小, 最大]",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 20
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "filter": {
+      "type": "object",
+      "description": "过滤器配置",
+      "properties": {
+        "inclusive": {
+          "type": "object",
+          "description": "包含过滤器",
+          "patternProperties": {
+            "^.*$": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "exclusive": {
+          "type": "object",
+          "description": "排除过滤器",
+          "patternProperties": {
+            "^.*$": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "array",
+      "description": "地图数据点列表",
+      "items": {
+        "$ref": "#/$defs/DataPoint"
+      },
+      "minItems": 0
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "DataPoint": {
+      "type": "object",
+      "description": "地图上的数据点",
+      "required": ["name", "address", "intro", "center"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "地点名称",
+          "minLength": 1
+        },
+        "address": {
+          "type": "string",
+          "description": "详细地址",
+          "minLength": 1
+        },
+        "phone": {
+          "type": "string",
+          "description": "联系电话"
+        },
+        "webName": {
+          "type": "string",
+          "description": "网页标题"
+        },
+        "webLink": {
+          "type": "string",
+          "format": "uri",
+          "description": "相关链接"
+        },
+        "intro": {
+          "type": "string",
+          "description": "简介描述",
+          "minLength": 1
+        },
+        "tags": {
+          "type": "array",
+          "description": "标签列表",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "center": {
+          "type": "object",
+          "description": "坐标位置",
+          "required": ["lat", "lng"],
+          "properties": {
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90,
+              "description": "纬度"
+            },
+            "lng": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180,
+              "description": "经度"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+} 

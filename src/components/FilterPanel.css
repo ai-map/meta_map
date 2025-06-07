@@ -1,0 +1,112 @@
+.filter-panel {
+  width: 100%;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: height 0.3s ease;
+  overflow: hidden;
+  max-height: 25vh;
+}
+
+.filter-panel.expanded {
+  height: auto;
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.expand-icon {
+  font-size: 12px;
+  color: #666;
+  transition: transform 0.3s ease;
+}
+
+.filter-container {
+  width: 100%;
+  padding: 20px 30px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.filter-category {
+  margin-bottom: 20px;
+}
+
+.filter-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.filter-category-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  margin-right: 12px;
+}
+
+.filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex: 1;
+}
+
+.filter-item {
+  padding: 8px 24px;
+  border-radius: 30px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.filter-item:hover {
+  opacity: 0.8;
+}
+
+/* Inclusive筛选器样式 */
+.filter-item.inclusive.active {
+  background-color: #e0f2e9;
+  color: #07c160;
+  font-weight: 500;
+}
+
+/* Exclusive筛选器样式 */
+.filter-item.exclusive.active {
+  background-color: #fff4e5;
+  color: #ff9800;
+  font-weight: 500;
+}
+
+/* 重置按钮 */
+.filter-reset {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.filter-reset-btn {
+  font-size: 14px;
+  color: #666;
+  padding: 10px 30px;
+  background-color: #f5f5f5;
+  border-radius: 30px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-reset-btn:hover {
+  background-color: #e0e0e0;
+} 

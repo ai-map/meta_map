@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta Map Viewer Demo - 橙飞一下美食地图</title>
+    <meta name="description" content="Meta Map Viewer演示应用，展示橙飞一下的美食地图数据，包含1665+探店记录，覆盖19+个城市">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗺️</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            overflow-y: auto !important;
+            height: auto !important;
+        }
+
+        html {
+            height: auto !important;
+        }
+
+        .demo-content {
+            margin: 0;
+            padding: 0;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            flex-direction: column;
+            gap: 15px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: #e6f3ff;
+            color: #0066cc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        /* 覆盖部分组件样式以适配demo */
+        .map-viewer-wrapper {
+            height: 600px !important; /* 固定地图高度 */
+            min-height: 400px !important;
+        }
+        
+        /* 确保地图组件适应容器 */
+        .map-viewer {
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-content">
+        <div id="mapViewer">
+        </div>
+    </div>
+
+    <script type="module" src="./main.tsx"></script>
+</body>
+</html> 

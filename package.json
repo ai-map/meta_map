@@ -1,0 +1,39 @@
+{
+  "name": "@ai-map/map-viewer",
+  "version": "1.0.0",
+  "description": "一个基于 React 和 TypeScript 的地图查看器组件",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "react",
+    "typescript",
+    "map",
+    "leaflet",
+    "clustering"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && cp -r src/styles dist/",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@types/leaflet": "^1.9.8",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0",
+    "react-leaflet": "^4.2.1",
+    "tlbs-map-react": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

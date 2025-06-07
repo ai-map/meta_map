@@ -1,18 +1,88 @@
-import { MapData, DataPoint, FilterCriteria, MapStatistics, ValidationResult } from './types';
-import { validateMapData, validateNewDataPoint } from './validator';
+import { 
+  MapData, 
+  StandardMapData, 
+  DataPoint, 
+  MapPoint,
+  FilterCriteria, 
+  MapStatistics, 
+  ValidationResult,
+  Coordinate
+} from '../types';
+import { validateMapData, validateStandardMapData, validateNewDataPoint } from './validator';
 
 /**
  * MetaMap 地图数据管理类
  */
 export class MetaMap {
-  private data: MapData;
+  private data: StandardMapData;
   
-  constructor(initialData: MapData) {
-    const validation = validateMapData(initialData);
+  constructor(initialData: MapData | StandardMapData) {
+    // 验证输入数据
+    const validation = this.isStandardData(initialData) 
+      ? validateStandardMapData(initialData)
+      : validateMapData(initialData);
+      
     if (!validation.valid) {
       throw new Error(`数据验证失败: ${validation.errors?.join(', ')}`);
     }
-    this.data = JSON.parse(JSON.stringify(initialData)); // 深拷贝
+    
+    // 转换为标准格式
+    this.data = this.normalizeData(initialData);
+  }
+  
+  /**
+   * 判断是否为标准格式数据
+   */
+  private isStandardData(data: any): data is StandardMapData {
+    return data.data && Array.isArray(data.data) && !data.points;
+  }
+  
+  /**
+   * 将各种格式的数据标准化为 StandardMapData
+   */
+  private normalizeData(data: MapData | StandardMapData): StandardMapData {
+    if (this.isStandardData(data)) {
+      return JSON.parse(JSON.stringify(data)); // 深拷贝
+    }
+    
+    // 转换兼容格式
+    const normalized: StandardMapData = {
+      id: data.id || data._id,
+      name: data.name,
+      description: data.description,
+      origin: data.origin,
+      center: data.center,
+      zoom: Array.isArray(data.zoom) && data.zoom.length === 3 
+        ? data.zoom as [number, number, number]
+        : undefined,
+      filter: data.filter,
+      data: []
+    };
+    
+    // 转换数据点
+    const sourceData = data.data || data.points || [];
+    normalized.data = sourceData.map((point: any) => {
+      if ('latitude' in point && 'longitude' in point) {
+        // 微信小程序格式
+        return {
+          name: point.name,
+          address: point.address || '',
+          phone: point.phone,
+          webName: point.webName,
+          intro: point.intro || '',
+          tags: point.tags,
+          center: {
+            lat: point.latitude || point.center?.lat,
+            lng: point.longitude || point.center?.lng
+          }
+        } as DataPoint;
+      } else {
+        // 标准格式
+        return point as DataPoint;
+      }
+    });
+    
+    return normalized;
   }
   
   /**
@@ -31,10 +101,22 @@ export class MetaMap {
   }
   
   /**
-   * 获取所有数据点
+   * 获取所有数据点 (标准格式)
    */
   getAllDataPoints(): DataPoint[] {
     return JSON.parse(JSON.stringify(this.data.data)); // 返回深拷贝
+  }
+  
+  /**
+   * 获取所有数据点 (兼容MapPoint格式)
+   */
+  getAllMapPoints(): MapPoint[] {
+    return this.data.data.map((point, index) => ({
+      ...point,
+      latitude: point.center.lat,
+      longitude: point.center.lng,
+      index: index + 1
+    }));
   }
   
   /**
@@ -164,6 +246,19 @@ export class MetaMap {
   getStatistics(): MapStatistics {
     const coordinates = this.data.data.map(point => point.center);
     
+    if (coordinates.length === 0) {
+      return {
+        totalPoints: 0,
+        tags: {},
+        coordinates: {
+          northernmost: 0,
+          southernmost: 0,
+          easternmost: 0,
+          westernmost: 0
+        }
+      };
+    }
+    
     return {
       totalPoints: this.data.data.length,
       tags: this.getTagStatistics(),
@@ -179,7 +274,7 @@ export class MetaMap {
   /**
    * 计算两点之间的距离（千米）
    */
-  static calculateDistance(coord1: { lat: number; lng: number }, coord2: { lat: number; lng: number }): number {
+  static calculateDistance(coord1: Coordinate, coord2: Coordinate): number {
     const R = 6371; // 地球半径（千米）
     const dLat = (coord2.lat - coord1.lat) * Math.PI / 180;
     const dLon = (coord2.lng - coord1.lng) * Math.PI / 180;
@@ -194,7 +289,7 @@ export class MetaMap {
   /**
    * 查找指定坐标附近的数据点
    */
-  findNearbyPoints(center: { lat: number; lng: number }, radiusKm: number): DataPoint[] {
+  findNearbyPoints(center: Coordinate, radiusKm: number): DataPoint[] {
     return this.data.data.filter(point => {
       const distance = MetaMap.calculateDistance(center, point.center);
       return distance <= radiusKm;
@@ -202,19 +297,29 @@ export class MetaMap {
   }
   
   /**
-   * 导出数据（返回深拷贝）
+   * 导出为标准格式数据
    */
-  exportData(): MapData {
+  exportStandardData(): StandardMapData {
     return JSON.parse(JSON.stringify(this.data));
+  }
+  
+  /**
+   * 导出为兼容格式数据 (包含MapPoint格式)
+   */
+  exportCompatibleData(): MapData {
+    return {
+      ...this.data,
+      points: this.getAllMapPoints(),
+      data: this.data.data
+    };
   }
   
   /**
    * 更新地图基本信息
    */
-  updateMapInfo(info: Partial<Pick<MapData, 'name' | 'description' | 'origin' | 'center' | 'zoom' | 'filter'>>): ValidationResult {
+  updateMapInfo(info: Partial<Pick<StandardMapData, 'name' | 'description' | 'origin' | 'center' | 'zoom' | 'filter'>>): ValidationResult {
     const updatedData = { ...this.data, ...info };
-    const validation = validateMapData(updatedData);
-    
+    const validation = validateStandardMapData(updatedData);
     if (!validation.valid) {
       return validation;
     }
@@ -222,4 +327,60 @@ export class MetaMap {
     Object.assign(this.data, info);
     return { valid: true };
   }
-} 
+}
+
+/**
+ * 工具函数
+ */
+export const metaMapUtils = {
+  /**
+   * 计算两点之间的距离（千米）
+   */
+  calculateDistance: MetaMap.calculateDistance,
+
+  /**
+   * 生成随机坐标（用于测试）
+   */
+  generateRandomCoordinate: (center: Coordinate, radiusKm: number = 10): Coordinate => {
+    const radiusInDegrees = radiusKm / 111.32; // 大约1度 = 111.32公里
+    const lat = center.lat + (Math.random() - 0.5) * 2 * radiusInDegrees;
+    const lng = center.lng + (Math.random() - 0.5) * 2 * radiusInDegrees;
+    return { lat, lng };
+  },
+
+  /**
+   * 创建空的地图数据模板
+   */
+  createEmptyMapData: (name: string, center: Coordinate): StandardMapData => ({
+    name,
+    center,
+    data: []
+  }),
+
+  /**
+   * 将DataPoint转换为MapPoint
+   */
+  dataPointToMapPoint: (point: DataPoint, index?: number): MapPoint => ({
+    ...point,
+    latitude: point.center.lat,
+    longitude: point.center.lng,
+    index: index
+  }),
+
+  /**
+   * 将MapPoint转换为DataPoint
+   */
+  mapPointToDataPoint: (point: MapPoint): DataPoint => ({
+    name: point.name,
+    address: point.address,
+    phone: point.phone,
+    webName: point.webName,
+    webLink: point.webLink,
+    intro: point.intro,
+    tags: point.tags,
+    center: {
+      lat: point.latitude || point.center.lat,
+      lng: point.longitude || point.center.lng
+    }
+  })
+}; 
