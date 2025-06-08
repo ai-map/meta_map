@@ -131,6 +131,4 @@ export interface MapViewerProps {
   minClusterSize?: number;
   clusterDistance?: number;
   defaultView?: 'map' | 'list';
-  showControls?: boolean;
-  enableNavigation?: boolean;
 } 

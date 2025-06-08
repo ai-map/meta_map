@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { MapViewer, StandardMapData, validateStandardMapData } from "../src";
+import {
+  MapViewer,
+  StandardMapData,
+  validateStandardMapData,
+  ClusterAlgorithmType,
+} from "../src";
 
 // 加载示例数据
 async function loadMapData(): Promise<StandardMapData> {
@@ -29,6 +34,14 @@ const Demo: React.FC = () => {
   const [mapData, setMapData] = useState<StandardMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // MapViewer 属性状态
+  const [clusterAlgorithm, setClusterAlgorithm] =
+    useState<ClusterAlgorithmType>(ClusterAlgorithmType.DISTANCE);
+  const [enableClustering, setEnableClustering] = useState(true);
+  const [minClusterSize, setMinClusterSize] = useState(2);
+  const [clusterDistance, setClusterDistance] = useState(80);
+  const [defaultView, setDefaultView] = useState<"map" | "list">("map");
 
   // 加载数据
   useEffect(() => {
@@ -78,7 +91,187 @@ const Demo: React.FC = () => {
     );
   }
 
-  return <MapViewer mapData={mapData} />;
+  return (
+    <div style={{ display: "flex", height: "100vh" }}>
+      {/* 左侧控制面板 */}
+      <div
+        style={{
+          width: "40%",
+          padding: "20px",
+          backgroundColor: "#f5f5f5",
+          borderRight: "1px solid #ddd",
+          overflowY: "auto",
+        }}
+      >
+        <h3 style={{ margin: "0 0 20px 0", color: "#333" }}>
+          MapViewer 参数测试
+        </h3>
+
+        {/* 聚类设置 */}
+        <div style={{ marginBottom: "24px" }}>
+          <h4 style={{ margin: "0 0 12px 0", color: "#666" }}>聚类设置</h4>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "4px",
+                fontSize: "14px",
+              }}
+            >
+              启用聚类:
+            </label>
+            <input
+              type="checkbox"
+              checked={enableClustering}
+              onChange={(e) => setEnableClustering(e.target.checked)}
+              style={{ transform: "scale(1.2)" }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "4px",
+                fontSize: "14px",
+              }}
+            >
+              聚类算法:
+            </label>
+            <select
+              value={clusterAlgorithm}
+              onChange={(e) =>
+                setClusterAlgorithm(e.target.value as ClusterAlgorithmType)
+              }
+              disabled={!enableClustering}
+              style={{
+                width: "100%",
+                padding: "6px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                backgroundColor: enableClustering ? "white" : "#f0f0f0",
+              }}
+            >
+              <option value={ClusterAlgorithmType.DISTANCE}>距离聚类</option>
+              <option value={ClusterAlgorithmType.DENSITY}>密度聚类</option>
+              <option value={ClusterAlgorithmType.HIERARCHICAL}>
+                层次聚类
+              </option>
+              <option value={ClusterAlgorithmType.NONE}>无聚类</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "4px",
+                fontSize: "14px",
+              }}
+            >
+              最小聚类大小: {minClusterSize}
+            </label>
+            <input
+              type="range"
+              min="2"
+              max="10"
+              value={minClusterSize}
+              onChange={(e) => setMinClusterSize(parseInt(e.target.value))}
+              disabled={!enableClustering}
+              style={{
+                width: "100%",
+                opacity: enableClustering ? 1 : 0.5,
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "4px",
+                fontSize: "14px",
+              }}
+            >
+              聚类距离: {clusterDistance}m
+            </label>
+            <input
+              type="range"
+              min="20"
+              max="500"
+              step="10"
+              value={clusterDistance}
+              onChange={(e) => setClusterDistance(parseInt(e.target.value))}
+              disabled={!enableClustering}
+              style={{
+                width: "100%",
+                opacity: enableClustering ? 1 : 0.5,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 视图设置 */}
+        <div style={{ marginBottom: "24px" }}>
+          <h4 style={{ margin: "0 0 12px 0", color: "#666" }}>视图设置</h4>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "4px",
+                fontSize: "14px",
+              }}
+            >
+              默认视图:
+            </label>
+            <select
+              value={defaultView}
+              onChange={(e) => setDefaultView(e.target.value as "map" | "list")}
+              style={{
+                width: "100%",
+                padding: "6px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+              }}
+            >
+              <option value="map">地图视图</option>
+              <option value="list">列表视图</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 当前配置显示 */}
+        <div
+          style={{
+            padding: "12px",
+            backgroundColor: "#e8f4fd",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "#666",
+          }}
+        >
+          <h5 style={{ margin: "0 0 8px 0", color: "#333" }}>当前配置:</h5>
+          <div>聚类: {enableClustering ? "启用" : "禁用"}</div>
+          <div>算法: {clusterAlgorithm}</div>
+          <div>最小大小: {minClusterSize}</div>
+          <div>距离: {clusterDistance}m</div>
+          <div>视图: {defaultView}</div>
+        </div>
+      </div>
+
+      {/* 右侧地图区域 */}
+      <MapViewer
+        mapData={mapData}
+        clusterAlgorithm={clusterAlgorithm}
+        enableClustering={enableClustering}
+        minClusterSize={minClusterSize}
+        clusterDistance={clusterDistance}
+        defaultView={defaultView}
+      />
+    </div>
+  );
 };
 
 // 启动应用
