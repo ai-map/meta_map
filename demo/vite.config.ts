@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -11,18 +10,12 @@ export default defineConfig({
     host: true,
     open: true
   },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, '../src'),
-    },
+  optimizeDeps: {
+    // 强制预构建本地包
+    include: ['@ai-map/meta_map']
   },
   build: {
     outDir: 'dist',
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-    },
   },
   css: {
     modules: {

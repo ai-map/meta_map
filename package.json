@@ -3,7 +3,20 @@
   "version": "0.2.1",
   "description": "一个基于 React 和 TypeScript 的地图查看器组件",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "keywords": [
     "react",
     "typescript",

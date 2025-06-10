@@ -17,7 +17,10 @@ import {
   DataPoint,
 } from "../types";
 import { MetaMap } from "../utils/metaMap";
-import "./MapViewer.css";
+// CSS 导入 - 只在浏览器环境中导入
+if (typeof window !== "undefined") {
+  import("./MapViewer.css").catch(() => {});
+}
 
 // 聚类相关导入
 import {

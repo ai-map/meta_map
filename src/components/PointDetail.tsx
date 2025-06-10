@@ -1,6 +1,9 @@
 import React from 'react';
 import { MapPoint } from '../types';
-import './PointDetail.css';
+// CSS 导入 - 只在浏览器环境中导入
+if (typeof window !== "undefined") {
+  import("./PointDetail.css").catch(() => {});
+}
 
 interface PointDetailProps {
   point: MapPoint | null;

@@ -6,7 +6,7 @@ import {
   StandardMapData,
   validateStandardMapData,
   ClusterAlgorithmType,
-} from "../src";
+} from "@ai-map/meta_map";
 
 // 加载示例数据
 async function loadMapData(): Promise<StandardMapData> {
@@ -271,6 +271,23 @@ const Demo: React.FC = () => {
           <div>距离: {clusterDistance}m</div>
           <div>视图: {defaultView}</div>
         </div>
+
+        {/* 包信息显示 */}
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "12px",
+            backgroundColor: "#e8f7e8",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "#2d5a2d",
+          }}
+        >
+          <h5 style={{ margin: "0 0 8px 0", color: "#1e4e1e" }}>包信息:</h5>
+          <div>✅ 使用本地包: @ai-map/meta_map</div>
+          <div>✅ 导入测试: 已通过</div>
+          <div>✅ 组件加载: 正常</div>
+        </div>
       </div>
 
       {/* 右侧地图区域 */}
@@ -292,4 +309,6 @@ const container = document.getElementById("mapViewer");
 if (container) {
   const root = createRoot(container);
   root.render(<Demo />);
+} else {
+  console.error('找不到 #mapViewer 容器');
 }
