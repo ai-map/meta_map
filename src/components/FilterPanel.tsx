@@ -1,6 +1,9 @@
 import React from 'react';
 import { FilterState } from '../types';
-import './FilterPanel.css';
+// CSS 导入 - 只在浏览器环境中导入
+if (typeof window !== "undefined") {
+  import("./FilterPanel.css").catch(() => {});
+}
 
 interface FilterPanelProps {
   filters: FilterState;
