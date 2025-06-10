@@ -29,7 +29,7 @@ def create_empty_map_data(name: str, center: dict) -> dict:
     }
 
 # 版本信息
-__version__ = "1.0.0"
+__version__ = "0.2.1"
 __author__ = "Meta Map Team"
 
 # 导出的公共接口

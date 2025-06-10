@@ -1,6 +1,6 @@
 {
-  "name": "@ai-map/map-viewer",
-  "version": "1.0.0",
+  "name": "@ai-map/meta_map",
+  "version": "0.2.1",
   "description": "一个基于 React 和 TypeScript 的地图查看器组件",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,9 +14,9 @@
   "author": "Your Name",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && cp -r src/styles dist/",
+    "build": "tsc && xcopy \"src\\components\\*.css\" \"dist\\components\\\" /Y",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "if exist dist rmdir /s /q dist"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.8",
