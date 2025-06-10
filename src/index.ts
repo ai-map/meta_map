@@ -4,9 +4,6 @@ export { default as FilterPanel } from './components/FilterPanel';
 export { default as PointsList } from './components/PointsList';
 export { default as PointDetail } from './components/PointDetail';
 
-// 默认导出 MapViewer 组件，支持 import MapViewer from "meta_map" 的用法
-export { default } from './components/MapViewer';
-
 // 类型导出
 export type {
   MapViewerProps,
