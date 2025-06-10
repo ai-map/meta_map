@@ -45,24 +45,6 @@ export interface Cluster<T extends Point = Point> {
   id?: string | number;
 }
 
-/**
- * 事件类型枚举
- */
-export type EventType = "cluster";
-
-/**
- * 事件回调函数类型
- */
-export type EventCallback = (event: EventObject) => void;
-
-/**
- * 事件对象接口
- */
-export interface EventObject {
-  type: EventType;
-  payload: any;
-}
-
 // 地球半径，单位：千米
 export const EARTH_RADIUS = 6371.0;
 
@@ -73,7 +55,6 @@ export abstract class ClusterManager<T extends Point = Point> {
   protected points: T[] = [];
   protected clusters: Cluster<T>[] = [];
   protected options: ClusterOptions;
-  protected eventListeners: Map<EventType, EventCallback[]> = new Map();
 
   /**
    * 构造函数
@@ -88,9 +69,6 @@ export abstract class ClusterManager<T extends Point = Point> {
       coordinateSystem: CoordinateSystem.WGS84,
       ...options,
     };
-
-    // 初始化事件监听器映射
-    this.eventListeners.set("cluster", []);
   }
 
   /**
@@ -99,14 +77,7 @@ export abstract class ClusterManager<T extends Point = Point> {
    */
   public updatePoints(points: T[]): Cluster<T>[] {
     this.points = [...points];
-
     this.clusters = this.performClustering(this.points, this.options);
-
-    this.dispatchEvent({
-      type: "cluster",
-      payload: { clusters: this.clusters },
-    });
-
     return [...this.clusters];
   }
 
@@ -121,53 +92,7 @@ export abstract class ClusterManager<T extends Point = Point> {
     }
 
     this.clusters = this.performClustering(this.points, this.options);
-
-    this.dispatchEvent({
-      type: "cluster",
-      payload: { clusters: this.clusters },
-    });
-
     return [...this.clusters];
-  }
-
-  /**
-   * 订阅事件
-   * @param type 事件类型
-   * @param callback 回调函数
-   */
-  public on(type: EventType, callback: EventCallback): void {
-    const listeners = this.eventListeners.get(type);
-    if (listeners) {
-      listeners.push(callback);
-    }
-  }
-
-  /**
-   * 取消事件订阅
-   * @param type 事件类型
-   * @param callback 回调函数
-   */
-  public off(type: EventType, callback: EventCallback): void {
-    const listeners = this.eventListeners.get(type);
-    if (listeners) {
-      const index = listeners.indexOf(callback);
-      if (index !== -1) {
-        listeners.splice(index, 1);
-      }
-    }
-  }
-
-  /**
-   * 分发事件
-   * @param event 事件对象
-   */
-  protected dispatchEvent(event: EventObject): void {
-    const listeners = this.eventListeners.get(event.type);
-    if (listeners) {
-      for (const callback of listeners) {
-        callback(event);
-      }
-    }
   }
 
   /**

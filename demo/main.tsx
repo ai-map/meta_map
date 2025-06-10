@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import {
   MapViewer,
+  MapViewerRef,
   StandardMapData,
   validateStandardMapData,
   ClusterAlgorithmType,
@@ -34,6 +35,9 @@ const Demo: React.FC = () => {
   const [mapData, setMapData] = useState<StandardMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // MapViewer 引用
+  const mapViewerRef = useRef<MapViewerRef>(null);
 
   // MapViewer 属性状态
   const [clusterAlgorithm, setClusterAlgorithm] =
@@ -55,6 +59,14 @@ const Demo: React.FC = () => {
         setLoading(false);
       });
   }, []);
+
+  // 将 MapViewer 引用暴露到 window 对象
+  useEffect(() => {
+    if (mapViewerRef.current) {
+      (window as any)['viewer'] = mapViewerRef.current;
+      console.log('MapViewer 实例已暴露到 window.viewer');
+    }
+  }, [mapData]); // 当mapData加载完成后执行
 
   if (loading) {
     return (
@@ -263,6 +275,7 @@ const Demo: React.FC = () => {
 
       {/* 右侧地图区域 */}
       <MapViewer
+        ref={mapViewerRef}
         mapData={mapData}
         clusterAlgorithm={clusterAlgorithm}
         enableClustering={enableClustering}

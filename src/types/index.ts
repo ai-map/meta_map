@@ -119,6 +119,19 @@ export enum CoordinateSystem {
   BD09 = 'bd09'
 }
 
+// MapViewer 组件暴露的方法接口
+export interface MapViewerRef {
+  resetMap: () => void;
+  selectPoint: (point: MapPoint, index: number) => void;
+  updateClusters: () => void;
+  adjustClusterParameters: () => void;
+  refreshFilteredPointsAndClusters: () => void;
+  getSelectedPoint: () => MapPoint | null;
+  getFilteredPoints: () => MapPoint[];
+  getClusters: () => any[];
+  getClusterRadius: () => number;
+}
+
 // MapViewer 组件属性类型
 export interface MapViewerProps {
   mapData: MapData | StandardMapData;

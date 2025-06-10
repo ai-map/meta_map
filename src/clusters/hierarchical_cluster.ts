@@ -220,7 +220,7 @@ export class HierarchicalClusterManager<T extends Point = Point> extends Cluster
       const distance = this.calculateHaversineDistance(center, point);
       maxDistance = Math.max(maxDistance, distance);
     }
-    
+
     return maxDistance;
   }
 }

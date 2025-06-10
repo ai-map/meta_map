@@ -7,6 +7,7 @@ export { default as PointDetail } from './components/PointDetail';
 // 类型导出
 export type {
   MapViewerProps,
+  MapViewerRef,
   MapData,
   StandardMapData,
   DataPoint,
