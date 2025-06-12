@@ -1,0 +1,25 @@
+{
+  "name": "jsdemo",
+  "version": "1.0.0",
+  "description": "这是一个使用纯 **JavaScript + React** 实现的 `@ai-map/meta_map` 组件演示项目，相对于 TypeScript 版本的 demo，它展示了如何在 JavaScript 项目中使用该组件库。",
+  "main": "vite.config.js",
+  "dependencies": {
+    "@ai-map/meta_map": "file:../",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tlbs-map-react": "^1.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.4.5"
+  },
+  "scripts": {
+    "dev": "vite --port 3007 --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
