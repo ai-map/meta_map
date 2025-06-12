@@ -33,8 +33,8 @@ export interface DataPoint {
 
 // 地图点位类型 (兼容微信小程序格式)
 export interface MapPoint extends DataPoint {
-  latitude: number;   // 兼容字段，映射自 center.lat
-  longitude: number;  // 兼容字段，映射自 center.lng
+  latitude: number; // 兼容字段，映射自 center.lat
+  longitude: number; // 兼容字段，映射自 center.lng
   index?: number;
 }
 
@@ -50,8 +50,19 @@ export interface StandardMapData {
   data: DataPoint[];
 }
 
+export interface MetaMapData {
+  id: string;
+  name: string;
+  description: string;
+  origin: string;
+  center: Coordinate;
+  zoom: [number, number, number]; // [默认, 最小, 最大]
+  filter?: Filter;
+  data: DataPoint[];
+}
+
 // 兼容的地图数据类型 (向后兼容)
-export interface MapData extends Omit<StandardMapData, 'data' | 'zoom'> {
+export interface MapData extends Omit<StandardMapData, "data" | "zoom"> {
   _id?: string;
   fileID?: string;
   zoom?: number[] | [number, number, number];
@@ -107,16 +118,16 @@ export interface MapStatistics {
 // 聚类算法类型
 export enum ClusterAlgorithmType {
   DENSITY = "density",
-  DISTANCE = "distance", 
+  DISTANCE = "distance",
   HIERARCHICAL = "hierarchical",
   NONE = "none",
 }
 
 // 坐标系统类型
 export enum CoordinateSystem {
-  WGS84 = 'wgs84',
-  GCJ02 = 'gcj02',
-  BD09 = 'bd09'
+  WGS84 = "wgs84",
+  GCJ02 = "gcj02",
+  BD09 = "bd09",
 }
 
 // MapViewer 组件暴露的方法接口
@@ -124,28 +135,26 @@ export interface MapViewerRef {
   resetMap: () => void;
   selectPoint: (point: MapPoint, index: number) => void;
   updateClusters: () => void;
-  adjustClusterParameters: () => { needsUpdate: boolean; clusterResults?: any[] };
+  adjustClusterParameters: () => { needsUpdate: boolean; newRadius?: number };
   getSelectedPoint: () => MapPoint | null;
   getFilteredPoints: () => MapPoint[];
   getClusters: () => any[];
   getClusterRadius: () => number;
+  getCenter: () => { lat: number; lng: number };
+  getZoom: () => number;
   // 新增的聚类配置方法
-  setClusterEnabled: (enabled: boolean) => void;
-  setClusterAlgorithm: (algorithm: ClusterAlgorithmType) => void;
-  setClusterRadius: (radius: number) => void;
-  setMinClusterSize: (minSize: number) => void;
 }
 
 // MapViewer 组件属性类型
 export interface MapViewerProps {
-  mapData: MapData | StandardMapData;
+  mapData: MetaMapData;
   className?: string;
   style?: { [key: string]: any };
   onPointSelect?: (point: MapPoint | null) => void;
   onMapReady?: () => void;
   clusterAlgorithm?: ClusterAlgorithmType;
-  enableClustering?: boolean;
+
   minClusterSize?: number;
   clusterDistance?: number;
-  defaultView?: 'map' | 'list';
-} 
+  defaultView?: "map" | "list";
+}

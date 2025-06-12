@@ -72,27 +72,33 @@ export abstract class ClusterManager<T extends Point = Point> {
   }
 
   /**
-   * 更新所有点数据
-   * @param points 点对象数组
-   */
-  public updatePoints(points: T[]): Cluster<T>[] {
-    this.points = [...points];
-    this.clusters = this.performClustering(this.points, this.options);
-    return [...this.clusters];
-  }
-
-  /**
-   * 更新聚类
+   * 更新聚类（统一接口）
+   * @param points 可选的点对象数组，如果提供则更新点数据
    * @param options 可选的聚类选项，用于覆盖默认选项
    * @returns 聚类结果
    */
-  public updateClusters(options?: Partial<ClusterOptions>): Cluster<T>[] {
+  public updateClusters(points?: T[], options?: Partial<ClusterOptions>): Cluster<T>[] {
+    // 如果提供了新的点数据，则更新点数据
+    if (points !== undefined) {
+      this.points = [...points];
+    }
+
+    // 如果提供了新的选项，则更新选项
     if (options) {
       this.options = { ...this.options, ...options };
     }
 
     this.clusters = this.performClustering(this.points, this.options);
     return [...this.clusters];
+  }
+
+  /**
+   * @deprecated 使用 updateClusters(points) 代替
+   * 更新所有点数据
+   * @param points 点对象数组
+   */
+  public updatePoints(points: T[]): Cluster<T>[] {
+    return this.updateClusters(points);
   }
 
   /**

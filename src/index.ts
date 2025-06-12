@@ -1,15 +1,11 @@
 // 主要组件导出
 export { default as MapViewer } from './components/MapViewer';
-export { default as FilterPanel } from './components/FilterPanel';
-export { default as PointsList } from './components/PointsList';
-export { default as PointDetail } from './components/PointDetail';
 
 // 类型导出
 export type {
   MapViewerProps,
   MapViewerRef,
-  MapData,
-  StandardMapData,
+  MetaMapData,
   DataPoint,
   MapPoint,
   Coordinate,
@@ -50,7 +46,5 @@ export {
 
 // 验证器导出
 export {
-  validateMapData,
-  validateStandardMapData,
   validateNewDataPoint
 } from './utils/validator'; 

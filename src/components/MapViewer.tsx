@@ -12,12 +12,12 @@ import {
   MapViewerRef,
   MapPoint,
   FilterState,
-  MapData,
-  StandardMapData,
+  MetaMapData,
   DataPoint,
   ClusterAlgorithmType,
 } from "../types";
 import { MetaMap } from "../utils/metaMap";
+import ToastNotification, { ToastProps } from "./ToastNotification";
 import "./MapViewer.css";
 
 // 聚类相关导入
@@ -30,9 +30,11 @@ import {
 } from "../clusters/cluster_manager";
 import { DensityClusterManager } from "../clusters/density_cluster";
 import { HierarchicalClusterManager } from "../clusters/hierarchical_cluster";
+import { DistanceClusterManager } from "../clusters/distance_cluster";
+import { BasicClusterManager } from "../clusters/basic_cluster";
 
 // 腾讯地图API导入
-import { MultiMarker, BaseMap, MultiLabel } from "tlbs-map-react";
+import { MultiMarker, TMap, MultiLabel } from "tlbs-map-react";
 
 // 缩放级别对应的聚类半径映射
 const MAP_SCALE_TO_RATIO = {
@@ -61,48 +63,6 @@ interface ClusterItem extends ClusterBasePoint {
   id: string;
   name: string;
   point: MapPoint;
-}
-
-// 简单的距离聚类管理器实现
-class DistanceClusterManager extends ClusterManager<ClusterItem> {
-  protected performClustering(
-    points: ClusterItem[],
-    options: ClusterOptions
-  ): Cluster<ClusterItem>[] {
-    if (points.length === 0) return [];
-
-    const clusters: Cluster<ClusterItem>[] = [];
-    const used = new Set<string>();
-
-    for (const point of points) {
-      if (used.has(point.id)) continue;
-
-      const clusterPoints: ClusterItem[] = [point];
-      used.add(point.id);
-
-      // 查找附近的点
-      for (const otherPoint of points) {
-        if (used.has(otherPoint.id)) continue;
-
-        const distance = this.calculateHaversineDistance(point, otherPoint);
-        if (distance <= (options.radius || 100)) {
-          clusterPoints.push(otherPoint);
-          used.add(otherPoint.id);
-        }
-      }
-
-      // 创建聚类
-      const center = this.calculateClusterCenter(clusterPoints);
-      clusters.push({
-        center,
-        points: clusterPoints,
-        radius: options.radius || 100,
-        id: `cluster_${clusters.length}`,
-      });
-    }
-
-    return clusters;
-  }
 }
 
 // 确保Font Awesome样式可用
@@ -168,8 +128,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       className = "",
       style = {},
       defaultView = "map",
-      clusterAlgorithm = ClusterAlgorithmType.DISTANCE,
-      enableClustering = true,
+      clusterAlgorithm = ClusterAlgorithmType.HIERARCHICAL,
       minClusterSize = 2,
       clusterDistance = 100,
     },
@@ -191,23 +150,29 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     const [filterExpanded, setFilterExpanded] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [mapLoading, setMapLoading] = useState<boolean>(true); // 地图加载状态
+    const [mapInited, setMapInited] = useState<boolean>(false); // 地图初始化状态
 
     // 地图相关状态
-    const [mapCenter, setCurrentCenter] = useState<{
+    const [center, setCenter] = useState<{
       lat: number;
       lng: number;
     }>({
+      lat: 31.230416,
+      lng: 121.473701,
+    });
+    const [zoom, setZoom] = useState<number>(10);
+    const [minZoom] = useState<number>(3);
+    const [maxZoom] = useState<number>(18);
+    // Center 和 Scale 相关的 ref，避免闭包问题
+    const centerRef = useRef<{ lat: number; lng: number }>({
       lat: 39.9042,
       lng: 116.4074,
     });
-    const [currentScale, setCurrentScale] = useState<number>(10);
-    const [minScale] = useState<number>(3);
-    const [maxScale] = useState<number>(18);
+    const zoomRef = useRef<number>(10);
 
     // 地图事件状态
 
     // 聚类配置参数 - 使用 ref 管理，避免不必要的重新渲染
-    const clusterEnabledRef = useRef<boolean>(enableClustering);
     const clusterAlgorithmRef = useRef<ClusterAlgorithmType>(clusterAlgorithm);
     const clusterMinPointsRef = useRef<number>(minClusterSize);
     const clusterFactorRef = useRef<number>(1.2);
@@ -230,48 +195,66 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     const [selectedListPointIndex, setSelectedListPointIndex] =
       useState<number>(-1);
 
+    // Toast 提示状态
+    const [toasts, setToasts] = useState<ToastProps[]>([]);
+
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const boundsChangeTimerRef = useRef<number | null>(null); // 防抖定时器
     const clusterManagerRef = useRef<ClusterManager<ClusterItem> | null>(null);
     const processingMarkerTapRef = useRef<boolean>(false); // 防止重复处理点击事件
-    const isUpdatingClustersRef = useRef<boolean>(false); // 防止聚类更新期间的点击事件
+
     const clusterRadiusRef = useRef<number>(clusterDistance); // 聚类半径（米）
 
     // Point 相关的 ref，避免不必要的重新渲染
     const pointsRef = useRef<MapPoint[]>([]);
-    const filteredPointsRef = useRef<MapPoint[]>([]);
+    const filteredPointsRef = useRef<MapPoint[] | null>(null);
 
     // Markers 和 ClusterLabels 相关的 ref，避免闭包问题
     const markersRef = useRef<Marker[]>([]);
     const clusterLabelsRef = useRef<any[]>([]);
 
     // 新增的选中状态 ref
-    const selectedPointIndex = useRef<number>(0); // 记录被地图或列表选中的 point，数值为原始分配 index，0 代表未选中
-    const selectedMarkerIndex = useRef<number>(0); // 记录选中的 markerIndex，正数代表选中 Point 编号，负数代表 marker 选中编号，0代表未选中
+    const selectedPointIndexRef = useRef<number>(0); // 记录被地图或列表选中的 point，数值为原始分配 index，0 代表未选中
+    const selectedMarkerIndexRef = useRef<number>(0); // 记录选中的 markerIndex，正数代表选中 Point 编号，负数代表 marker 选中编号，0代表未选中
 
     // 获取当前选中的点位 - 根据selectedPointIndex查找
     const getSelectedPoint = (): MapPoint | null => {
-      if (selectedPointIndex.current > 0) {
+      if (selectedPointIndexRef.current > 0) {
         return (
-          filteredPointsRef.current.find(
-            (p) => p.index === selectedPointIndex.current
+          getFilteredPoints().find(
+            (p) => p.index === selectedPointIndexRef.current
           ) || null
         );
       }
       return null;
     };
 
-    const getClusterIndex = (index: number): number => {
-      // 查找点位是否在聚类中，返回聚类索引（负数）或0
+    // 获取点位的聚类信息
+    const getClusterInfo = (
+      index: number
+    ): {
+      clusterIndex: number;
+      clusterId: string | null;
+      isInCluster: boolean;
+    } => {
+      // 查找点位是否在聚类中，返回详细的聚类信息
       for (const [clusterId, points] of Object.entries(clusterMapRef.current)) {
         if (points.some((p) => p.index === index)) {
-          const clusterNumber = parseInt(clusterId.replace(/\D/g, "") || "1");
-          return -clusterNumber; // 返回负数表示聚类
+          const clusterNumber = extractClusterNumber(clusterId);
+          return {
+            clusterIndex: -clusterNumber, // 返回负数表示聚类
+            clusterId: clusterId,
+            isInCluster: true,
+          };
         }
       }
-      return 0; // 不在聚类中返回0
+      return {
+        clusterIndex: 0, // 不在聚类中返回0
+        clusterId: null,
+        isInCluster: false,
+      };
     };
 
     // 获取标记索引的统一函数
@@ -281,23 +264,22 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     ): number => {
       if (knownClusterId) {
         // 如果已知聚类ID，直接使用
-        const clusterNumber = parseInt(
-          knownClusterId.replace(/\D/g, "") || "1"
-        );
+        const clusterNumber = extractClusterNumber(knownClusterId);
         return -clusterNumber; // 负数表示聚类
       } else {
         // 否则查找点位是否在聚类中
-        const clusterIndex = getClusterIndex(pointIndex);
-        return clusterIndex !== 0 ? clusterIndex : pointIndex;
+        const clusterInfo = getClusterInfo(pointIndex);
+        return clusterInfo.isInCluster ? clusterInfo.clusterIndex : pointIndex;
       }
     };
 
     // 更新选中状态的统一函数
+    // setSelectedListPointIndex 在 tabChange 时更新
     const updateSelectedMarker = (pointIndex: number, markerIndex: number) => {
-      const prevPointIndex = selectedPointIndex.current;
-      const prevMarkerIndex = selectedMarkerIndex.current;
-      selectedPointIndex.current = pointIndex;
-      selectedMarkerIndex.current = markerIndex;
+      const prevPointIndex = selectedPointIndexRef.current;
+      const prevMarkerIndex = selectedMarkerIndexRef.current;
+      selectedPointIndexRef.current = pointIndex;
+      selectedMarkerIndexRef.current = markerIndex;
       console.log(
         "🎯 更新选中状态:",
         prevPointIndex,
@@ -309,22 +291,25 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
 
     // 清除选中状态的统一函数
     const clearSelectedMarker = () => {
-      selectedPointIndex.current = 0;
-      selectedMarkerIndex.current = 0;
+      selectedPointIndexRef.current = 0;
+      selectedMarkerIndexRef.current = 0;
       setSelectedListPointIndex(-1);
 
       console.log("🎯 清除选中状态");
     };
 
-    // 初始化完成标志，避免重复初始化
-    const dataInitializedRef = useRef<boolean>(false);
-    const filterInitializedRef = useRef<boolean>(false);
-    const clusterInitializedRef = useRef<boolean>(false);
-
     // 检查是否有筛选器
     const hasFilters = useMemo(() => {
       return Object.keys(availableFilters).length > 0;
     }, [availableFilters]);
+
+    // 从聚类ID中提取数字的统一函数
+    const extractClusterNumber = (
+      clusterId: string,
+      defaultValue: string = "1"
+    ): number => {
+      return parseInt(clusterId.replace(/\D/g, "") || defaultValue);
+    };
 
     // 获取标签的分类 - 从mapData.filter中获取
     const getCategoryForTag = (tag: string): string => {
@@ -350,27 +335,15 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       return "其他";
     };
 
-    // 初始化数据和筛选器 - 改为函数调用，使用标志避免重复初始化
-    const initializeMapData = () => {
-      if (dataInitializedRef.current) {
-        console.log("📊 数据已初始化，跳过重复初始化");
-        return;
-      }
-
+    // 初始化数据和筛选器
+    const updateMetaMapData = () => {
       console.log("📊 开始初始化地图数据");
       let metaMap: MetaMap;
-
-      // 重置选中状态
-      clearSelectedMarker();
 
       try {
         setLoading(true);
 
-        if ("data" in mapData && Array.isArray(mapData.data)) {
-          metaMap = new MetaMap(mapData as StandardMapData);
-        } else {
-          metaMap = new MetaMap(mapData as MapData);
-        }
+        metaMap = new MetaMap(mapData);
 
         const convertedPoints = metaMap.getAllDataPoints().map(
           (point: DataPoint, index: number): MapPoint => ({
@@ -382,7 +355,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         );
 
         pointsRef.current = convertedPoints;
-        updateFilteredPointsRef(convertedPoints);
 
         // 生成可用筛选器（使用通用函数）
         const {
@@ -397,26 +369,17 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
           exclusive: initialExclusiveState,
         });
 
-        // 标记数据初始化完成
-        dataInitializedRef.current = true;
-        if (filterInitializedRef.current || !dataInitializedRef.current) {
-          console.log("🔄 筛选已初始化或数据未准备好，跳过重复初始化");
-        } else {
-          console.log("🔄 开始初始化筛选和聚类");
+        // 获取筛选后的数据并执行聚类
+        updateClusters();
 
-          const filtered = applyFilters();
-          updateFilteredPointsRef(filtered);
-
-          // 标记筛选初始化完成
-          filterInitializedRef.current = true;
-
-          // 延迟执行聚类初始化
-          initClustering(filtered);
-
-          console.log("🔄 筛选和聚类初始化完成");
-        }
+        updateMapBounds(mapData.center, mapData.zoom[0]);
 
         setLoading(false);
+
+        // 如果地图已经初始化，则需要重置地图状态
+        if (mapInited) {
+          resetMap();
+        }
 
         console.log("📊 地图数据初始化完成");
       } catch (error) {
@@ -427,12 +390,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
 
     // 检查 mapData 变化，触发数据初始化
     useEffect(() => {
-      // 重置初始化标志
-      dataInitializedRef.current = false;
-      filterInitializedRef.current = false;
-      clusterInitializedRef.current = false;
-
-      initializeMapData();
+      updateMetaMapData();
     }, [mapData]);
 
     // 同步 markers state 到 markersRef
@@ -440,14 +398,34 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     useEffect(() => {
       markersRef.current = markers;
       clusterLabelsRef.current = clusterLabels;
-      console.log("🎨 样式更新结果:", {
-        markers: markers.map((m) => ({ id: m.id, styleId: m.styleId })),
-        labels: clusterLabels.map((l) => ({ id: l.id })),
-      });
     }, [markers, clusterLabels]);
 
+    // 同步 center 和 scale state 到 ref
+    useEffect(() => {
+      centerRef.current = center;
+      zoomRef.current = zoom;
+    }, [center, zoom]);
+
+    const getFilteredPoints = () => {
+      if (filteredPointsRef.current) return filteredPointsRef.current;
+      else {
+        filteredPointsRef.current = generateFilteredPoints();
+        setFilteredPoints(filteredPointsRef.current);
+        return filteredPointsRef.current;
+      }
+    };
+
+    const clearFilteredPoints = () => {
+      filteredPointsRef.current = null;
+      setFilteredPoints([]);
+    };
+
     // 应用筛选器（合并循环）
-    const applyFilters = () => {
+    const generateFilteredPoints = () => {
+      if (pointsRef.current.length === 0) {
+        console.warn("🔄 没有点位数据，返回空数组");
+        return [];
+      }
       return pointsRef.current.filter((point) => {
         if (!point.tags) return true;
 
@@ -491,32 +469,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       });
     };
 
-    // 当筛选条件变化时重新进行筛选和聚类
-    const updateFiltersAndClustering = () => {
-      if (!dataInitializedRef.current) {
-        console.log("🔄 数据未准备好，跳过筛选更新");
-        return;
-      }
-
-      console.log("🔄 筛选条件变化，重新筛选和聚类");
-
-      const filtered = applyFilters();
-      updateFilteredPointsRef(filtered);
-
-      // 检查当前选中的点位是否在筛选结果中，如果不在则清除选择
-      const currentSelectedPoint = getSelectedPoint();
-      if (
-        currentSelectedPoint &&
-        !filtered.find((p) => p.index === currentSelectedPoint.index)
-      ) {
-        console.log("🔄 选中点位不在筛选结果中，清除选择");
-        clearSelectedMarker();
-      }
-
-      // 重新执行聚类
-      initClustering(filtered);
-    };
-
     // 计算标记样式更新的纯函数（不依赖 states）
     const generateMarkerStyles = (
       selectedPointIndex: number,
@@ -525,7 +477,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       clusterMap: { [key: string]: MapPoint[] }
     ): Marker[] => {
       if (!inputMarkers || inputMarkers.length === 0) {
-        console.log("🎨 没有标记，返回空数组");
         return [];
       }
 
@@ -534,7 +485,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       let selectedClusterId = "";
 
       // 处理两种情况：
-      // 1. 有 selectedPointIndex，从 getClusterIndex 获取最新 selectedMarkerIndex
+      // 1. 有 selectedPointIndex，从 getClusterInfo 获取最新聚类信息
       // 2. 只有 selectedMarkerIndex
 
       if (selectedPointIndex > 0) {
@@ -545,7 +496,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         let currentClusterIndex = 0;
         for (const [clusterId, points] of Object.entries(clusterMap)) {
           if (points.some((p) => p.index === selectedPointIndex)) {
-            const clusterNumber = parseInt(clusterId.replace(/\D/g, "") || "1");
+            const clusterNumber = extractClusterNumber(clusterId);
             currentClusterIndex = -clusterNumber; // 负数表示聚类
             selectedClusterId = clusterId;
             break;
@@ -564,7 +515,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
 
           // 遍历 clusterMap，找到与 selectedMarkerIndex 匹配的聚类
           for (const [clusterId, points] of Object.entries(clusterMap)) {
-            const clusterNumber = parseInt(clusterId.replace(/\D/g, "") || "0");
+            const clusterNumber = extractClusterNumber(clusterId, "0");
             if (clusterNumber === targetMarkerIndex) {
               selectedClusterId = clusterId;
               break;
@@ -602,8 +553,8 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     // 应用标记样式更新的函数（调用纯函数并更新状态）
     const applyMarkerStylesUpdate = () => {
       const styledMarkers = generateMarkerStyles(
-        selectedPointIndex.current,
-        selectedMarkerIndex.current,
+        selectedPointIndexRef.current,
+        selectedMarkerIndexRef.current,
         markersRef.current,
         clusterMapRef.current
       );
@@ -635,10 +586,9 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         },
       }));
 
-      // 筛选状态改变后更新筛选和聚类
-      setTimeout(() => {
-        updateFiltersAndClustering();
-      }, 0);
+      clearFilteredPoints();
+      clearSelectedMarker();
+      updateClusters();
     };
 
     const handleExclusiveFilterTap = (category: string, value: string) => {
@@ -654,10 +604,9 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         return newState;
       });
 
-      // 筛选状态改变后更新筛选和聚类
-      setTimeout(() => {
-        updateFiltersAndClustering();
-      }, 0);
+      clearFilteredPoints();
+      clearSelectedMarker();
+      updateClusters();
     };
 
     // 生成筛选器状态的通用函数
@@ -705,10 +654,9 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         exclusive: exclusiveState,
       });
 
-      // 筛选状态重置后更新筛选和聚类
-      setTimeout(() => {
-        updateFiltersAndClustering();
-      }, 0);
+      clearFilteredPoints();
+      clearSelectedMarker();
+      updateClusters();
     };
 
     // 切换筛选器展开状态
@@ -719,7 +667,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     // Tab切换
     const onTabChange = (value: string) => {
       setActiveTab(value as "map" | "list");
-      setSelectedListPointIndex(selectedPointIndex.current - 1 || -1);
+      setSelectedListPointIndex(selectedPointIndexRef.current - 1 || -1);
     };
 
     // 聚类点选择
@@ -742,18 +690,16 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     );
 
     // 点位选择
-    const selectPoint = useCallback((point: MapPoint, listIndex?: number) => {
-      console.log("🎯 selectPoint开始:", { point, listIndex });
-
+    const selectPoint = useCallback((point: MapPoint) => {
       const pointIndex = point.index || 0;
       let markerIndex = pointIndex; // 默认选中点本身
 
       // 只有当有 selectedPointIndex 时，才判断是否在聚类中
       if (pointIndex > 0) {
-        const clusterIndex = getClusterIndex(pointIndex);
-        if (clusterIndex !== 0) {
+        const clusterInfo = getClusterInfo(pointIndex);
+        if (clusterInfo.isInCluster) {
           // 点在聚类中，选中聚类
-          markerIndex = clusterIndex;
+          markerIndex = clusterInfo.clusterIndex;
         }
         // 如果不在聚类中，markerIndex 保持为 pointIndex
       }
@@ -766,6 +712,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     }, []);
 
     // 清除聚类选择状态
+    // TODO
     const clearClusterSelection = () => {
       setClusterListVisible(false);
       setClusterPoints([]);
@@ -781,31 +728,19 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       if (!cluster) return;
 
       // 获取当前缩放级别
-      const currentMapScale = mapRef.current?.getZoom() || currentScale;
+      const currentMapScale = zoomRef.current;
       // 放大到适当级别，但不超过最大缩放
       const compensation = 1.5;
-      const newScale = Math.min(currentMapScale + 1, maxScale - compensation);
+      const newScale = Math.min(currentMapScale + 1, maxZoom - compensation);
 
       // 设置新的中心点和缩放级别
-      setCurrentCenter({
-        lat: cluster.center.y,
-        lng: cluster.center.x,
-      });
-      if (mapRef.current?.setCenter) {
-        mapRef.current.setCenter(
-          {
-            lat: cluster.center.y,
-            lng: cluster.center.x,
-          },
-          { duration: 200 }
-        );
-      }
-      setCurrentScale(newScale);
-
-      // 使用地图API直接设置缩放级别
-      if (mapRef.current?.setZoom) {
-        mapRef.current.setZoom(newScale, { duration: 200 });
-      }
+      updateMapBounds(
+        {
+          lat: cluster.center.y,
+          lng: cluster.center.x,
+        },
+        newScale
+      );
     };
 
     // 显示聚类点列表
@@ -822,9 +757,9 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         setActiveTab("list"); // 聚合点需要切换到列表选项卡以显示聚合内容
 
         // 如果已经有选中的点位，检查该点位是否在聚合点列表中
-        if (selectedPointIndex.current > 0) {
+        if (selectedPointIndexRef.current > 0) {
           const clusterPointIndex = clusterPointsData.findIndex(
-            (p) => p.index === selectedPointIndex.current
+            (p) => p.index === selectedPointIndexRef.current
           );
           if (clusterPointIndex >= 0) {
             // 更新选中状态
@@ -841,12 +776,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       try {
         const clickedMarkerId = event.geometry.id;
         console.log("🎯 标记点击:", clickedMarkerId);
-
-        // 检查是否正在更新聚类，如果是则忽略点击事件
-        if (isUpdatingClustersRef.current) {
-          console.log("正在更新聚类，忽略点击事件");
-          return;
-        }
 
         // 检查是否正在处理点击事件，避免重复触发
         if (processingMarkerTapRef.current) {
@@ -875,7 +804,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
           }
 
           // 获取当前缩放级别
-          const currentMapScale = mapRef.current?.getZoom() || currentScale;
+          const currentMapScale = zoomRef.current;
           const compensation = 1.5;
 
           // 清除所选状态
@@ -883,13 +812,11 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
           console.log("🎯 markerTap - 聚类选中:", clusterId);
 
           // 检查是否已达到最大缩放级别
-          if (currentMapScale < maxScale - compensation) {
+          if (currentMapScale < maxZoom - compensation) {
             // 未达到最大缩放，放大地图
-            console.log("📍 执行 zoomToCluster");
             zoomToCluster(clusterId);
           } else {
             // 已达到最大缩放，显示聚类点列表
-            console.log("📋 执行 showClusterList");
             showClusterList(clusterId);
           }
         } else if (clickedMarkerId.startsWith("marker-")) {
@@ -913,46 +840,31 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       }
     }, []);
 
+    // tlbs-map-react 封装得稀烂
+    const updateMapBounds = (
+      center: { lat: number; lng: number },
+      zoom: number
+    ) => {
+      mapRef.current?.easeTo({
+        center: { ...center },
+        zoom: zoom,
+      });
+      setCenter(center);
+      setZoom(zoom);
+    };
+
     // 重置地图
-    const resetMap = () => {
-      console.log("🔄 resetMap - 重置地图状态");
+    const resetMap = useCallback(() => {
+      // TODO: 这里地图更新会出发两次
+
+      // 直接更新状态，让React重新渲染地图
+      updateMapBounds(mapData.center, mapData.zoom[0]);
 
       // 清除选中状态
       clearSelectedMarker();
-
-      // 确定初始中心点
-      let initialCenter = mapData.center;
-      if (!initialCenter && pointsRef.current.length > 0) {
-        // 如果没有设置中心点，使用第一个点位的位置
-        initialCenter = {
-          lat: pointsRef.current[0].latitude,
-          lng: pointsRef.current[0].longitude,
-        };
-      }
-      // 默认中心点
-      if (!initialCenter) {
-        initialCenter = { lat: 39.9042, lng: 116.4074 };
-      }
-
-      const initialZoom = mapData.zoom?.[0] || 10;
-
-      // 直接更新状态，让React重新渲染地图
-      setCurrentCenter(initialCenter);
-      setCurrentScale(initialZoom);
-
-      // 使用地图API设置中心点
-      if (mapRef.current?.setCenter) {
-        mapRef.current.setCenter(initialCenter, { duration: 200 });
-      }
-
-      // 使用地图API直接设置缩放级别
-      if (mapRef.current?.setZoom) {
-        mapRef.current.setZoom(initialZoom, { duration: 200 });
-      }
-
       // 计算样式更新并应用
       applyMarkerStylesUpdate();
-    };
+    }, []);
 
     // 导航到位置
     const navigateToLocation = () => {
@@ -965,22 +877,47 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       }
     };
 
+    // Toast 相关函数
+    const showToast = (
+      message: string,
+      type: "success" | "error" | "info" | "warning" = "info",
+      duration = 2000
+    ) => {
+      const newToast: ToastProps = {
+        message,
+        type,
+        duration,
+      };
+      setToasts((prev) => [...prev, newToast]);
+    };
+
+    const removeToast = (index: number) => {
+      setToasts((prev) => prev.filter((_, i) => i !== index));
+    };
+
     // 复制文本
     const copyText = (text: string) => {
       if (navigator.clipboard) {
         navigator.clipboard
           .writeText(text)
           .then(() => {
-            console.log("文本已复制:", text);
+            showToast("已复制到剪贴板", "success");
           })
           .catch((err) => {
             console.error("复制失败:", err);
+            showToast("复制失败", "error");
           });
+      } else {
+        showToast("浏览器不支持剪贴板操作", "warning");
       }
     };
 
-    // 创建聚类管理器
-    const createClusterManager = (): ClusterManager<ClusterItem> | null => {
+    const clearClusterManager = () => {
+      clusterManagerRef.current = null;
+    };
+
+    // 初始化聚类管理器
+    const initClusterManager = (): void => {
       const baseOptions = {
         radius: clusterRadiusRef.current,
         minPoints: clusterMinPointsRef.current,
@@ -989,11 +926,8 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
 
       switch (clusterAlgorithmRef.current) {
         case ClusterAlgorithmType.DISTANCE:
-          console.log("🏗️ 创建距离聚类管理器", {
-            radius: baseOptions.radius,
-            minPoints: baseOptions.minPoints,
-          });
-          return new DistanceClusterManager(baseOptions);
+          clusterManagerRef.current = new DistanceClusterManager(baseOptions);
+          break;
 
         case ClusterAlgorithmType.DENSITY:
           // 密度聚类通常需要更多的最小点数和稍大的半径
@@ -1002,11 +936,8 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
             minPoints: Math.max(baseOptions.minPoints, 3), // DBSCAN 通常至少需要3个点
             radius: baseOptions.radius * 1.2, // 稍微增大半径以形成有意义的密度聚类
           };
-          console.log("🏗️ 创建密度聚类管理器 (DBSCAN)", {
-            radius: densityOptions.radius,
-            minPoints: densityOptions.minPoints,
-          });
-          return new DensityClusterManager(densityOptions);
+          clusterManagerRef.current = new DensityClusterManager(densityOptions);
+          break;
 
         case ClusterAlgorithmType.HIERARCHICAL:
           // 层次聚类对半径更敏感，使用原始参数
@@ -1014,72 +945,71 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
             ...baseOptions,
             maxZoom: 18, // 最大递归深度
           };
-          console.log("🏗️ 创建层次聚类管理器", {
-            radius: hierarchicalOptions.radius,
-            minPoints: hierarchicalOptions.minPoints,
-            maxZoom: hierarchicalOptions.maxZoom,
-          });
-          return new HierarchicalClusterManager(hierarchicalOptions);
+          clusterManagerRef.current = new HierarchicalClusterManager(
+            hierarchicalOptions
+          );
+          break;
 
         case ClusterAlgorithmType.NONE:
         default:
-          console.log("🏗️ 不使用聚类");
-          return null;
+          clusterManagerRef.current = new BasicClusterManager(baseOptions);
+          break;
       }
     };
 
-    // 初始化聚类管理器
-    const initClustering = (filteredPoints: MapPoint[]) => {
-      console.log("🏗️ initClustering 开始执行", {
-        点位数量: filteredPoints.length,
-        聚类算法: clusterAlgorithmRef.current,
-        聚类启用: clusterEnabledRef.current,
-        聚类半径: clusterRadiusRef.current,
-        最小聚类点数: clusterMinPointsRef.current,
-      });
+    // 获取聚类管理器，如果不存在则创建
+    const getClusterManager = (): ClusterManager<ClusterItem> => {
+      if (!clusterManagerRef.current) {
+        initClusterManager();
+      }
+      if (!clusterManagerRef.current) {
+        console.error("clusterManagerRef.current is null");
+      }
+      return clusterManagerRef.current!;
+    };
 
-      // 将点位数据转换为聚类管理器需要的格式
-      const clusterPoints: ClusterItem[] = filteredPoints.map(
-        (point, index) => ({
-          id: `point_${point.index || index}`,
-          name: point.name,
-          x: point.longitude, // 经度
-          y: point.latitude, // 纬度
-          weight: 1,
-          point: point,
-        })
-      );
+    // 将点位数据转换为聚类管理器需要的格式
+    const generateClusterPoints = (
+      filteredPoints: MapPoint[]
+    ): ClusterItem[] => {
+      return filteredPoints.map((point, index) => ({
+        id: `point_${point.index || index}`,
+        name: point.name,
+        x: point.longitude, // 经度
+        y: point.latitude, // 纬度
+        weight: 1,
+        point: point,
+      }));
+    };
 
-      // 如果是初次初始化，创建聚类管理器
-      if (!clusterInitializedRef.current) {
-        clusterManagerRef.current = createClusterManager();
-        clusterInitializedRef.current = true;
-        console.log(
-          "🏗️ 聚类管理器初始化完成，算法:",
-          clusterAlgorithmRef.current
+    // 初始化聚类
+    // 统一的聚类更新函数
+    const updateClusters = (options?: Partial<ClusterOptions>) => {
+      try {
+        // 获取筛选后的点数据
+        const filteredPoints = getFilteredPoints();
+
+        // 生成聚类点数据
+        const clusterPoints = generateClusterPoints(filteredPoints);
+
+        // 获取聚类管理器
+        const clusterManager = getClusterManager();
+
+        // 使用统一的接口：更新点数据和选项
+        const clusterResults = clusterManager.updateClusters(
+          clusterPoints,
+          options
         );
+        clustersRef.current = clusterResults;
+        updateClusterMap(clusterResults);
+      } catch (error) {
+        console.error("更新聚类失败:", error);
       }
-
-      let clusterResults: Cluster<ClusterItem>[] = [];
-      if (clusterManagerRef.current && clusterEnabledRef.current) {
-        // 更新点数据并执行聚类
-        clusterResults = clusterManagerRef.current.updatePoints(clusterPoints);
-      } else {
-        // 如果不使用聚类，直接创建标记
-        clusterResults = clusterPoints.map((point) => ({
-          center: point,
-          points: [point],
-          radius: 0,
-          id: point.id,
-        }));
-      }
-      clustersRef.current = clusterResults;
-      handleClusterUpdate(clusterResults);
     };
 
     // 处理聚类更新
     // 更新 clusterMapRef 和 markersRef 和 clusterLabelsRef
-    const handleClusterUpdate = (clusterResults: Cluster<ClusterItem>[]) => {
+    const updateClusterMap = (clusterResults: Cluster<ClusterItem>[]) => {
       // 处理聚类结果，转换为地图标记格式和标签（合并循环）
       const generatedMarkers: any[] = [];
       const newClusterMap: { [key: string]: MapPoint[] } = {};
@@ -1142,24 +1072,27 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         }
       });
 
-      // 首先更新 clusterMapRef，以便后续的 getClusterIndex 能正确工作
+      // 首先更新 clusterMapRef，以便后续的 getClusterInfo 能正确工作
       clusterMapRef.current = newClusterMap;
 
       // 计算新的选中状态
-      let finalPointIndex = selectedPointIndex.current;
-      let finalMarkerIndex = selectedMarkerIndex.current;
+      let finalPointIndex = selectedPointIndexRef.current;
+      let finalMarkerIndex = selectedMarkerIndexRef.current;
 
-      if (selectedPointIndex.current > 0) {
-        const currentPointIndex = selectedPointIndex.current;
-        const newClusterIndex = getClusterIndex(currentPointIndex);
+      if (selectedPointIndexRef.current > 0) {
+        const currentPointIndex = selectedPointIndexRef.current;
+        const clusterInfo = getClusterInfo(currentPointIndex);
 
         if (
-          newClusterIndex !== 0 &&
-          selectedMarkerIndex.current !== newClusterIndex
+          clusterInfo.isInCluster &&
+          selectedMarkerIndexRef.current !== clusterInfo.clusterIndex
         ) {
           // 点位现在在聚类中，且当前选中状态不是这个聚类，则更新选中状态
-          finalMarkerIndex = newClusterIndex;
-        } else if (newClusterIndex === 0 && selectedMarkerIndex.current < 0) {
+          finalMarkerIndex = clusterInfo.clusterIndex;
+        } else if (
+          !clusterInfo.isInCluster &&
+          selectedMarkerIndexRef.current < 0
+        ) {
           // 点位现在不在聚类中，但当前选中的是聚类，则更新为点位选中
           finalMarkerIndex = currentPointIndex;
         }
@@ -1181,23 +1114,17 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       setClusterLabels(generatedLabels);
     };
 
-    // 更新 filteredPointsRef，确保 ref 和 state 同步
-    const updateFilteredPointsRef = (points: MapPoint[]) => {
-      filteredPointsRef.current = points;
-      setFilteredPoints(points);
-    };
-
     // 根据当前缩放级别动态调整聚类参数
-    const adjustClusterParameters = (): {
+    const getClusterRadius = (): {
       needsUpdate: boolean;
-      clusterResults?: Cluster<ClusterItem>[];
+      newRadius?: number;
     } => {
-      if (!clusterEnabledRef.current || !mapRef.current) {
+      if (!mapRef.current) {
         return { needsUpdate: false };
       }
 
       // 获取当前缩放级别
-      const currentMapScale = mapRef.current.getZoom();
+      const currentMapScale = zoomRef.current;
 
       // 计算聚类半径
       const roundedScale = Math.ceil(currentMapScale).toString();
@@ -1226,59 +1153,14 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       // 使用 ref 来获取最新的 clusterRadius 值，避免闭包问题
       const currentRadius = clusterRadiusRef.current;
 
-      // 如果有变化，更新参数并返回聚类结果
+      // 如果有变化，更新参数并返回结果
       if (Math.abs(newClusterRadius - currentRadius) > 1) {
         // 使用小的容差避免浮点精度问题
         clusterRadiusRef.current = newClusterRadius;
-        if (clusterEnabledRef.current && clusterManagerRef.current) {
-          // 调用聚类更新逻辑并返回结果
-          const options: Partial<ClusterOptions> = {
-            radius: clusterRadiusRef.current,
-            minPoints: clusterMinPointsRef.current,
-          };
-          const clusterResults =
-            clusterManagerRef.current.updateClusters(options);
-          return { needsUpdate: true, clusterResults };
-        }
+        return { needsUpdate: true, newRadius: newClusterRadius };
       }
 
       return { needsUpdate: false };
-    };
-
-    // 更新聚类 - 只负责聚类更新
-    const updateClusters = () => {
-      if (!clusterManagerRef.current || !clusterEnabledRef.current) {
-        return;
-      }
-
-      // 添加标志变量，表示正在更新聚类
-      isUpdatingClustersRef.current = true;
-
-      console.log("⚙️ 开始更新聚类:", {
-        radius: clusterRadiusRef.current, // 使用 ref 而不是 state
-        minPoints: clusterMinPointsRef.current,
-      });
-
-      try {
-        const options: Partial<ClusterOptions> = {
-          radius: clusterRadiusRef.current,
-          minPoints: clusterMinPointsRef.current,
-        };
-
-        const clusterResults =
-          clusterManagerRef.current.updateClusters(options);
-        clustersRef.current = clusterResults;
-
-        // 同时更新 markers 和 clusterMap
-        handleClusterUpdate(clusterResults);
-      } catch (error) {
-        console.error("更新聚类失败:", error);
-      } finally {
-        // 确保更新完成后重置标志
-        setTimeout(() => {
-          isUpdatingClustersRef.current = false;
-        }, 100);
-      }
     };
 
     // 处理地图边界变化事件
@@ -1291,17 +1173,19 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       // 设置新的防抖定时器，300ms后没有新事件时执行
       boundsChangeTimerRef.current = setTimeout(() => {
         console.log("⏰ BoundsChange 防抖完成，开始调整聚类参数");
-        const { needsUpdate, clusterResults } = adjustClusterParameters();
-        if (needsUpdate && clusterResults) {
-          clustersRef.current = clusterResults;
-          handleClusterUpdate(clusterResults);
+        const { needsUpdate, newRadius } = getClusterRadius();
+        if (needsUpdate && newRadius) {
+          // 使用新的半径参数更新聚类
+          const options: Partial<ClusterOptions> = {
+            radius: newRadius,
+          };
+          updateClusters(options);
         }
       }, 300);
     };
 
     // 地图初始化完成
     const onMapInited = () => {
-      console.log("腾讯地图加载完成");
       const map = mapRef.current;
 
       if (!map) {
@@ -1315,6 +1199,9 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       if (typeof window !== "undefined") {
         (window as any)["tencentMap"] = map;
       }
+
+      // 设置地图初始化状态
+      setMapInited(true);
 
       resetMap();
       // 关闭地图loading状态
@@ -1330,42 +1217,38 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       };
     }, []);
 
-    // 监听聚类配置参数的变化
+    // 监听聚类参数变化 - 只需要更新参数
     useEffect(() => {
       let configChanged = false;
-
-      if (clusterEnabledRef.current !== enableClustering) {
-        clusterEnabledRef.current = enableClustering;
-        configChanged = true;
-        console.log("🔧 聚类启用状态已更新:", enableClustering);
-      }
+      const options: Partial<ClusterOptions> = {};
 
       if (clusterAlgorithmRef.current !== clusterAlgorithm) {
         clusterAlgorithmRef.current = clusterAlgorithm;
         configChanged = true;
         console.log("🔧 聚类算法已更新:", clusterAlgorithm);
-        // 算法改变时需要重新创建聚类管理器
-        clusterInitializedRef.current = false;
+        clearClusterManager();
       }
 
       if (clusterMinPointsRef.current !== minClusterSize) {
         clusterMinPointsRef.current = minClusterSize;
         configChanged = true;
         console.log("🔧 最小聚类大小已更新:", minClusterSize);
+        options.minPoints = minClusterSize;
       }
 
       if (clusterRadiusRef.current !== clusterDistance) {
         clusterRadiusRef.current = clusterDistance;
         configChanged = true;
         console.log("🔧 聚类距离已更新:", clusterDistance);
+        options.radius = clusterDistance;
       }
 
       // 如果配置发生变化，重新执行聚类
-      if (configChanged && filteredPointsRef.current.length > 0) {
-        console.log("🔧 聚类配置已更改，重新执行聚类");
-        updateFiltersAndClustering();
+      if (configChanged) {
+        clearSelectedMarker();
+        updateClusters(options);
       }
-    }, [enableClustering, clusterAlgorithm, minClusterSize, clusterDistance]);
+    }, [clusterAlgorithm, minClusterSize, clusterDistance]);
 
     // 阻止事件冒泡
     const preventBubble = (e: React.MouseEvent) => {
@@ -1379,35 +1262,16 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         resetMap,
         selectPoint,
         updateClusters,
-        adjustClusterParameters,
+        adjustClusterParameters: getClusterRadius,
         getSelectedPoint: () => getSelectedPoint(),
-        getFilteredPoints: () => filteredPointsRef.current,
+        getFilteredPoints: () => getFilteredPoints(),
         getClusters: () => clustersRef.current,
         getClusterRadius: () => clusterRadiusRef.current,
+        getCenter: () => centerRef.current,
+        getZoom: () => zoomRef.current,
         // 新增的聚类配置方法
-        setClusterEnabled: (enabled: boolean) => {
-          clusterEnabledRef.current = enabled;
-          console.log("🔧 动态设置聚类启用:", enabled);
-          updateFiltersAndClustering();
-        },
-        setClusterAlgorithm: (algorithm: ClusterAlgorithmType) => {
-          clusterAlgorithmRef.current = algorithm;
-          clusterInitializedRef.current = false; // 重置聚类管理器
-          console.log("🔧 动态设置聚类算法:", algorithm);
-          updateFiltersAndClustering();
-        },
-        setClusterRadius: (radius: number) => {
-          clusterRadiusRef.current = radius;
-          console.log("🔧 动态设置聚类半径:", radius);
-          updateFiltersAndClustering();
-        },
-        setMinClusterSize: (minSize: number) => {
-          clusterMinPointsRef.current = minSize;
-          console.log("🔧 动态设置最小聚类大小:", minSize);
-          updateFiltersAndClustering();
-        },
       }),
-      [updateFiltersAndClustering]
+      []
     );
 
     return (
@@ -1546,15 +1410,15 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
                   </button>
 
                   {/* 腾讯地图组件 */}
-                  <BaseMap
+                  <TMap
                     ref={mapRef}
                     apiKey={TENCENT_MAP_API_KEY}
                     options={{
-                      center: mapCenter,
+                      center: center,
                       viewMode: "2D",
-                      zoom: currentScale,
-                      minZoom: minScale,
-                      maxZoom: maxScale,
+                      zoom: zoom,
+                      minZoom: minZoom,
+                      maxZoom: maxZoom,
                       baseMap: {
                         type: "vector",
                         features: ["base", "label", "point"],
@@ -1578,7 +1442,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
                       geometries={clusterLabels}
                       onClick={markerTap}
                     />
-                  </BaseMap>
+                  </TMap>
                 </div>
 
                 {/* 加载状态 */}
@@ -1663,7 +1527,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
                             selectedListPointIndex === index ? "active" : ""
                           }`}
                           onClick={() => {
-                            selectPoint(point, index);
+                            selectPoint(point);
                             setSelectedListPointIndex(index);
                           }}
                         >
@@ -1778,6 +1642,9 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
             );
           })()}
         </div>
+
+        {/* Toast 通知组件 */}
+        <ToastNotification toasts={toasts} onRemoveToast={removeToast} />
       </div>
     );
   }

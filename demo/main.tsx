@@ -3,13 +3,12 @@ import { createRoot } from "react-dom/client";
 import {
   MapViewer,
   MapViewerRef,
-  StandardMapData,
-  validateStandardMapData,
+  MetaMapData,
   ClusterAlgorithmType,
 } from "../src";
 
 // 加载示例数据
-async function loadMapData(): Promise<StandardMapData> {
+async function loadMapData(): Promise<MetaMapData> {
   try {
     const response = await fetch("./xinhua_pet.json");
     if (!response.ok) {
@@ -18,13 +17,8 @@ async function loadMapData(): Promise<StandardMapData> {
 
     const data = await response.json();
 
-    // 验证数据格式
-    const validation = validateStandardMapData(data);
-    if (!validation.valid) {
-      throw new Error(`数据验证失败: ${validation.errors?.join(", ")}`);
-    }
-
-    return data;
+    // MetaMapData 使用 TypeScript 类型检查，无需额外验证
+    return data as MetaMapData;
   } catch (error) {
     console.error("加载地图数据失败:", error);
     throw error;
@@ -32,7 +26,7 @@ async function loadMapData(): Promise<StandardMapData> {
 }
 
 const Demo: React.FC = () => {
-  const [mapData, setMapData] = useState<StandardMapData | null>(null);
+  const [mapData, setMapData] = useState<MetaMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -41,8 +35,7 @@ const Demo: React.FC = () => {
 
   // MapViewer 属性状态
   const [clusterAlgorithm, setClusterAlgorithm] =
-    useState<ClusterAlgorithmType>(ClusterAlgorithmType.DISTANCE);
-  const [enableClustering, setEnableClustering] = useState(true);
+    useState<ClusterAlgorithmType>(ClusterAlgorithmType.HIERARCHICAL);
   const [minClusterSize, setMinClusterSize] = useState(2);
   const [clusterDistance, setClusterDistance] = useState(80);
   const [defaultView, setDefaultView] = useState<"map" | "list">("map");
@@ -123,23 +116,7 @@ const Demo: React.FC = () => {
         <div style={{ marginBottom: "24px" }}>
           <h4 style={{ margin: "0 0 12px 0", color: "#666" }}>聚类设置</h4>
 
-          <div style={{ marginBottom: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "4px",
-                fontSize: "14px",
-              }}
-            >
-              启用聚类:
-            </label>
-            <input
-              type="checkbox"
-              checked={enableClustering}
-              onChange={(e) => setEnableClustering(e.target.checked)}
-              style={{ transform: "scale(1.2)" }}
-            />
-          </div>
+
 
           <div style={{ marginBottom: "12px" }}>
             <label
@@ -156,13 +133,11 @@ const Demo: React.FC = () => {
               onChange={(e) =>
                 setClusterAlgorithm(e.target.value as ClusterAlgorithmType)
               }
-              disabled={!enableClustering}
               style={{
                 width: "100%",
                 padding: "6px",
                 border: "1px solid #ccc",
                 borderRadius: "4px",
-                backgroundColor: enableClustering ? "white" : "#f0f0f0",
               }}
             >
               <option value={ClusterAlgorithmType.DISTANCE}>距离聚类</option>
@@ -170,7 +145,7 @@ const Demo: React.FC = () => {
               <option value={ClusterAlgorithmType.HIERARCHICAL}>
                 层次聚类
               </option>
-              <option value={ClusterAlgorithmType.NONE}>无聚类</option>
+              <option value={ClusterAlgorithmType.NONE}>基础聚类</option>
             </select>
           </div>
 
@@ -190,10 +165,8 @@ const Demo: React.FC = () => {
               max="10"
               value={minClusterSize}
               onChange={(e) => setMinClusterSize(parseInt(e.target.value))}
-              disabled={!enableClustering}
               style={{
                 width: "100%",
-                opacity: enableClustering ? 1 : 0.5,
               }}
             />
           </div>
@@ -215,10 +188,8 @@ const Demo: React.FC = () => {
               step="10"
               value={clusterDistance}
               onChange={(e) => setClusterDistance(parseInt(e.target.value))}
-              disabled={!enableClustering}
               style={{
                 width: "100%",
-                opacity: enableClustering ? 1 : 0.5,
               }}
             />
           </div>
@@ -265,7 +236,6 @@ const Demo: React.FC = () => {
           }}
         >
           <h5 style={{ margin: "0 0 8px 0", color: "#333" }}>当前配置:</h5>
-          <div>聚类: {enableClustering ? "启用" : "禁用"}</div>
           <div>算法: {clusterAlgorithm}</div>
           <div>最小大小: {minClusterSize}</div>
           <div>距离: {clusterDistance}m</div>
@@ -278,7 +248,6 @@ const Demo: React.FC = () => {
         ref={mapViewerRef}
         mapData={mapData}
         clusterAlgorithm={clusterAlgorithm}
-        enableClustering={enableClustering}
         minClusterSize={minClusterSize}
         clusterDistance={clusterDistance}
         defaultView={defaultView}
