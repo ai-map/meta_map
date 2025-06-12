@@ -330,6 +330,9 @@ const MapViewer: React.FC<MapViewerProps> = ({
 
   // 应用筛选器
   const applyFilters = useCallback(() => {
+    if (!points || !Array.isArray(points)) {
+      return [];
+    }
     return points.filter((point) => {
       if (!point.tags) return true;
 
