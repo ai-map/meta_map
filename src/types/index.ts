@@ -124,7 +124,7 @@ export interface MapViewerRef {
   resetMap: () => void;
   selectPoint: (point: MapPoint, index: number) => void;
   updateClusters: () => void;
-  adjustClusterParameters: () => void;
+  adjustClusterParameters: () => { needsUpdate: boolean; clusterResults?: any[] };
   getSelectedPoint: () => MapPoint | null;
   getFilteredPoints: () => MapPoint[];
   getClusters: () => any[];

@@ -517,62 +517,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       initClustering(filtered);
     };
 
-    // 计算标记、标签和聚类地图的更新数据 - 不直接变更状态，返回更新数据
-    const updateMarkersAndClusterMap = (
-      inputMarkers: any[],
-      inputClusterMap: { [key: string]: MapPoint[] },
-      inputLabels: any[],
-      applyStyles: boolean = true
-    ) => {
-      // 如果需要应用样式，则使用纯函数处理样式更新
-      let finalMarkers = inputMarkers;
-      if (applyStyles) {
-        console.log("🎨 使用 updateMarkerStyles 处理样式更新");
-        finalMarkers = generateMarkerStyles(
-          selectedPointIndex.current,
-          selectedMarkerIndex.current,
-          inputMarkers,
-          inputClusterMap
-        );
-      }
-
-      // 计算新的聚类映射信息
-      const newClusterMapInfo = {
-        clusterCount: Object.keys(inputClusterMap).length,
-        totalPointsInClusters: Object.values(inputClusterMap).reduce(
-          (sum, points) => sum + points.length,
-          0
-        ),
-        clusterDetails: Object.entries(inputClusterMap).map(([id, points]) => ({
-          clusterId: id,
-          pointCount: points.length,
-        })),
-      };
-
-      // 详细打印更新前后的 clusterMap 变化
-      const oldClusterMapInfo = {
-        clusterCount: Object.keys(clusterMapRef.current).length,
-        totalPointsInClusters: Object.values(clusterMapRef.current).reduce(
-          (sum, points) => sum + points.length,
-          0
-        ),
-        clusterDetails: Object.entries(clusterMapRef.current).map(
-          ([id, points]) => ({
-            clusterId: id,
-            pointCount: points.length,
-            pointIndexes: points.map((p) => p.index),
-          })
-        ),
-      };
-
-      // 返回更新数据，不直接变更状态
-      return {
-        finalMarkers,
-        newClusterMap: inputClusterMap,
-        newLabels: inputLabels,
-      };
-    };
-
     // 计算标记样式更新的纯函数（不依赖 states）
     const generateMarkerStyles = (
       selectedPointIndex: number,
@@ -992,8 +936,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
 
       const initialZoom = mapData.zoom?.[0] || 10;
 
-      console.log("重置地图到初始状态");
-
       // 直接更新状态，让React重新渲染地图
       setCurrentCenter(initialCenter);
       setCurrentScale(initialZoom);
@@ -1007,13 +949,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       if (mapRef.current?.setZoom) {
         mapRef.current.setZoom(initialZoom, { duration: 200 });
       }
-
-      // 重置选中状态
-
-      console.log("🔄 resetMap - 重置选中状态:", {
-        selectedPointIndex: selectedPointIndex.current,
-        selectedMarkerIndex: selectedMarkerIndex.current,
-      });
 
       // 计算样式更新并应用
       applyMarkerStylesUpdate();
@@ -1143,6 +1078,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     };
 
     // 处理聚类更新
+    // 更新 clusterMapRef 和 markersRef 和 clusterLabelsRef
     const handleClusterUpdate = (clusterResults: Cluster<ClusterItem>[]) => {
       // 处理聚类结果，转换为地图标记格式和标签（合并循环）
       const generatedMarkers: any[] = [];
@@ -1206,16 +1142,8 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         }
       });
 
-      // 计算更新数据，但不应用样式（将在后面统一处理）
-      const updateResult = updateMarkersAndClusterMap(
-        generatedMarkers,
-        newClusterMap,
-        generatedLabels,
-        false
-      );
-
       // 首先更新 clusterMapRef，以便后续的 getClusterIndex 能正确工作
-      clusterMapRef.current = updateResult.newClusterMap;
+      clusterMapRef.current = newClusterMap;
 
       // 计算新的选中状态
       let finalPointIndex = selectedPointIndex.current;
@@ -1244,13 +1172,13 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       const finalMarkers = generateMarkerStyles(
         finalPointIndex,
         finalMarkerIndex,
-        updateResult.finalMarkers,
-        updateResult.newClusterMap
+        generatedMarkers,
+        newClusterMap
       );
 
       // 一次性应用所有状态更新
       setMarkers(finalMarkers);
-      setClusterLabels(updateResult.newLabels);
+      setClusterLabels(generatedLabels);
     };
 
     // 更新 filteredPointsRef，确保 ref 和 state 同步
@@ -1260,9 +1188,12 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     };
 
     // 根据当前缩放级别动态调整聚类参数
-    const adjustClusterParameters = () => {
+    const adjustClusterParameters = (): {
+      needsUpdate: boolean;
+      clusterResults?: Cluster<ClusterItem>[];
+    } => {
       if (!clusterEnabledRef.current || !mapRef.current) {
-        return;
+        return { needsUpdate: false };
       }
 
       // 获取当前缩放级别
@@ -1295,22 +1226,23 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       // 使用 ref 来获取最新的 clusterRadius 值，避免闭包问题
       const currentRadius = clusterRadiusRef.current;
 
-      // 如果有变化，更新参数
+      // 如果有变化，更新参数并返回聚类结果
       if (Math.abs(newClusterRadius - currentRadius) > 1) {
         // 使用小的容差避免浮点精度问题
         clusterRadiusRef.current = newClusterRadius;
         if (clusterEnabledRef.current && clusterManagerRef.current) {
-          // 直接调用聚类更新逻辑，避免循环依赖
+          // 调用聚类更新逻辑并返回结果
           const options: Partial<ClusterOptions> = {
             radius: clusterRadiusRef.current,
             minPoints: clusterMinPointsRef.current,
           };
           const clusterResults =
             clusterManagerRef.current.updateClusters(options);
-          clustersRef.current = clusterResults;
-          handleClusterUpdate(clusterResults);
+          return { needsUpdate: true, clusterResults };
         }
       }
+
+      return { needsUpdate: false };
     };
 
     // 更新聚类 - 只负责聚类更新
@@ -1359,7 +1291,11 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       // 设置新的防抖定时器，300ms后没有新事件时执行
       boundsChangeTimerRef.current = setTimeout(() => {
         console.log("⏰ BoundsChange 防抖完成，开始调整聚类参数");
-        adjustClusterParameters();
+        const { needsUpdate, clusterResults } = adjustClusterParameters();
+        if (needsUpdate && clusterResults) {
+          clustersRef.current = clusterResults;
+          handleClusterUpdate(clusterResults);
+        }
       }, 300);
     };
 
