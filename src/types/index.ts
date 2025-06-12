@@ -129,6 +129,11 @@ export interface MapViewerRef {
   getFilteredPoints: () => MapPoint[];
   getClusters: () => any[];
   getClusterRadius: () => number;
+  // 新增的聚类配置方法
+  setClusterEnabled: (enabled: boolean) => void;
+  setClusterAlgorithm: (algorithm: ClusterAlgorithmType) => void;
+  setClusterRadius: (radius: number) => void;
+  setMinClusterSize: (minSize: number) => void;
 }
 
 // MapViewer 组件属性类型

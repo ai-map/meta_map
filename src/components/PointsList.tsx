@@ -7,14 +7,14 @@ if (typeof window !== "undefined") {
 
 interface PointsListProps {
   points: MapPoint[];
-  selectedPoint?: MapPoint | null;
+  selectedPointIndex?: number;
   onPointSelect: (point: MapPoint) => void;
   onNavigate?: (point: MapPoint) => void;
 }
 
 export const PointsList: React.FC<PointsListProps> = ({
   points,
-  selectedPoint,
+  selectedPointIndex = 0,
   onPointSelect,
   onNavigate
 }) => {
@@ -26,7 +26,7 @@ export const PointsList: React.FC<PointsListProps> = ({
             <div
               key={point.index || index}
               className={`point-item ${
-                selectedPoint === point ? 'active' : ''
+                selectedPointIndex === point.index ? 'active' : ''
               }`}
               onClick={() => onPointSelect(point)}
             >
