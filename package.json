@@ -29,29 +29,31 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc && xcopy \"src\\components\\*.css\" \"dist\\components\\\" /Y",
+    "build:demo": "cd react-demo && npm run build:library",
     "dev": "tsc --watch",
-    "clean": "if exist dist rmdir /s /q dist"
+    "clean": "if exist dist rmdir /s /q dist",
+    "dev:link": "npm run build && npm link",
+    "demo:react": "cd react-demo && npm run dev:windows",
+    "demo:setup": "cd react-demo && npm install && npm link @ai-map/meta_map"
   },
   "dependencies": {
-    "@json-schema-tools/meta-schema": "^1.7.5",
-    "@types/leaflet": "^1.9.8",
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1",
     "leaflet": "^1.9.4",
-    "leaflet.markercluster": "^1.5.3",
-    "react-leaflet": "^4.2.1",
-    "tlbs-map-react": "^1.1.0"
+    "leaflet.markercluster": "^1.5.3"
   },
   "devDependencies": {
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
+    "@json-schema-tools/meta-schema": "^1.7.5",
+    "@types/leaflet": "^1.9.8",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^4.2.1",
+    "tlbs-map-react": "^1.1.0",
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
-    "leaflet": "^1.9.4",
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0",
-    "react-leaflet": "^4.2.1",
-    "tlbs-map-react": "^1.1.0"
+    "leaflet": "^1.9.4"
   }
 }

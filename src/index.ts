@@ -7,7 +7,6 @@ export type {
   DataPoint,
   Filter,
   MapViewerProps,
-  MapViewerRef,
   MetaMapData,
   ValidationResult,
 } from "./types";

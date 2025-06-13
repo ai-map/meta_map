@@ -1,8 +1,10 @@
-# @ai-map/meta_map 使用说明
+# @ai-map/meta_map
 
-现在您可以通过以下方式使用 @ai-map/meta_map：
+基于腾讯地图的 React 地图组件库，支持多种聚类算法和数据可视化。
 
-## 安装
+## 🚀 快速开始
+
+### 安装
 
 ```bash
 npm install @ai-map/meta_map
@@ -10,98 +12,74 @@ npm install @ai-map/meta_map
 npm install git+https://github.com/ai-map/meta_map.git
 ```
 
-### 依赖项要求
-
-本包使用 peerDependencies 配置，需要您的项目安装以下依赖项：
+### 依赖项
 
 ```bash
 npm install react react-dom leaflet react-leaflet tlbs-map-react leaflet.markercluster
 ```
 
-或者在您的 `package.json` 中添加这些依赖项：
-
-```json
-{
-  "dependencies": {
-    "@ai-map/meta_map": "latest",
-    "leaflet": "^1.9.4",
-    "leaflet.markercluster": "^1.5.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1",
-    "tlbs-map-react": "^1.1.0"
-  }
-}
-```
-
-> **注意**: 这是 npm 包的标准做法，可以避免重复依赖、减少包体积，并提供版本灵活性。
-
-## 使用方式
-
-### 默认导入 MapViewer 组件
+### 基本使用
 
 ```javascript
 import MapViewer from "@ai-map/meta_map";
 
 function App() {
   const mapData = {
-    // 您的地图数据
+    name: "我的地图",
+    center: { lat: 39.9042, lng: 116.4074 },
+    zoom: [3, 10, 18],
+    data: [
+      {
+        id: "1",
+        name: "地点1",
+        center: { lat: 39.9042, lng: 116.4074 },
+        address: "北京市",
+        tags: ["餐厅"]
+      }
+    ]
   };
 
   return <MapViewer mapData={mapData} />;
 }
 ```
 
-### 命名导入其他组件和工具
+## 🛠️ 功能特性
+
+- **多种聚类算法** - 基础、距离、密度、分层聚类
+- **数据过滤** - 支持包含/排除过滤器
+- **TypeScript 支持** - 完整的类型定义
+- **响应式设计** - 适配不同屏幕尺寸
+- **腾讯地图集成** - 基于 tlbs-map-react
+
+## 📦 导出组件
 
 ```javascript
 import MapViewer, {
   FilterPanel,
   PointsList,
   PointDetail,
-  MetaMap,
+  MetaMap
 } from "@ai-map/meta_map";
 ```
 
-### TypeScript 支持
+## 🔧 开发
 
-```typescript
-import MapViewer, { MapViewerProps, MapData } from "@ai-map/meta_map";
+### 构建
 
-const App: React.FC = () => {
-  const mapData: MapData = {
-    // 类型安全的地图数据
-  };
-
-  return <MapViewer mapData={mapData} />;
-};
+```bash
+npm run build    # 构建生产版本
+npm run dev      # 开发模式（监听文件变化）
 ```
 
-## 本地开发
+### 联调热更新
 
-如果您要从本地源码进行开发，可以使用文件引用：
-
-```json
-{
-  "dependencies": {
-    "@ai-map/meta_map": "file:../path/to/meta_map",
-    "leaflet": "^1.9.4",
-    "leaflet.markercluster": "^1.5.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1",
-    "tlbs-map-react": "^1.1.0"
-  }
-}
+```bash
+npm run demo:setup    # 设置演示环境
+npm run demo:react    # 启动联调环境
 ```
 
-确保在您的构建工具（如 Vite）中配置预构建优化：
+详细开发说明请查看 [react-demo/README.md](./react-demo/README.md)
 
-```javascript
-// vite.config.ts
-export default defineConfig({
-  optimizeDeps: {
-    include: ["@ai-map/meta_map"],
-  },
-});
-```
+## �� 许可证
+
+MIT License

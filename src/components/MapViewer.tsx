@@ -1,18 +1,16 @@
-import React, {
-  forwardRef,
+import * as React from "react";
+const {
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
-} from "react";
+} = React;
 import {
   ClusterAlgorithmType,
   Coordinate,
   DataPoint,
   MapViewerProps,
-  MapViewerRef,
 } from "../types";
 import { MetaMap } from "../utils/metaMap";
 import "./MapViewer.css";
@@ -167,17 +165,13 @@ const initialZoom = 10;
 const minZoom = 3;
 const maxZoom = 18;
 
-export const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
-  (
-    {
-      mapData,
-      defaultView = "map",
-      clusterAlgorithm = ClusterAlgorithmType.HIERARCHICAL,
-      minClusterSize = 2,
-      clusterDistance = 100,
-    },
-    ref
-  ) => {
+export const MapViewer: React.FC<MapViewerProps> = ({
+  mapData,
+  defaultView = "map",
+  clusterAlgorithm = ClusterAlgorithmType.HIERARCHICAL,
+  minClusterSize = 2,
+  clusterDistance = 100,
+}) => {
     // 基本状态管理
     // points 通过 pointsRef 管理，不使用状态
     const [filteredPoints, setFilteredPoints] = useState<MapPoint[]>([]);
@@ -1221,17 +1215,7 @@ export const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       e.stopPropagation();
     };
 
-    // 暴露组件方法给父组件
-    useImperativeHandle(
-      ref,
-      () => ({
-        resetMap,
-        getClusterRadius: () => clusterRadiusRef.current,
-        getCenter: getMapCenter,
-        getZoom: getMapZoom,
-      }),
-      []
-    );
+
 
     return (
       <div ref={containerRef} className={"container"}>
@@ -1600,5 +1584,4 @@ export const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         <ToastNotification toasts={toasts} onRemoveToast={removeToast} />
       </div>
     );
-  }
-);
+};

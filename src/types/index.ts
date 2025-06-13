@@ -51,15 +51,6 @@ export enum ClusterAlgorithmType {
   NONE = "none",
 }
 
-// MapViewer 组件暴露的方法接口
-export interface MapViewerRef {
-  resetMap: () => void;
-  getClusterRadius: () => number;
-  getCenter: () => { lat: number; lng: number };
-  getZoom: () => number;
-  // 新增的聚类配置方法
-}
-
 // MapViewer 组件属性类型
 export interface MapViewerProps {
   mapData: MetaMapData;
