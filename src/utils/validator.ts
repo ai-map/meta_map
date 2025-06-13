@@ -1,4 +1,4 @@
-import { MapData, StandardMapData, DataPoint, ValidationResult, Coordinate } from '../types';
+import { Coordinate, DataPoint, ValidationResult } from '../types';
 
 /**
  * 验证坐标是否有效

@@ -2,7 +2,7 @@ import {
   ClusterManager,
   ClusterOptions,
   Cluster,
-  Point,
+  ClusterBasePoint,
 } from "./cluster_manager";
 
 /**
@@ -11,7 +11,7 @@ import {
  * 提供最基础的聚类功能，适合简单场景使用
  */
 export class BasicClusterManager<
-  T extends Point = Point
+  T extends ClusterBasePoint = ClusterBasePoint
 > extends ClusterManager<T> {
   constructor(options: ClusterOptions = {}) {
     super(options);
@@ -55,7 +55,10 @@ export class BasicClusterManager<
         }
 
         const otherPoint = points[j];
-        const distance = this.calculateHaversineDistance(currentPoint, otherPoint);
+        const distance = this.calculateHaversineDistance(
+          currentPoint,
+          otherPoint
+        );
 
         if (distance < CLUSTER_DISTANCE) {
           clusterPoints.push(otherPoint);
@@ -84,7 +87,9 @@ export class BasicClusterManager<
       }
     }
 
-    console.log(`🏗️ 基础聚类完成: ${points.length} 个点 -> ${clusters.length} 个聚类`);
+    console.log(
+      `🏗️ 基础聚类完成: ${points.length} 个点 -> ${clusters.length} 个聚类`
+    );
     return clusters;
   }
 
@@ -98,7 +103,7 @@ export class BasicClusterManager<
     if (points.length === 0) {
       throw new Error("Cannot calculate center of empty points array");
     }
-    
+
     if (points.length === 1) {
       return { ...points[0] };
     }

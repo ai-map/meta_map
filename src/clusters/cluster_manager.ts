@@ -16,7 +16,7 @@ export enum CoordinateSystem {
  * 点对象接口
  * x 对应经度(longitude)，y 对应纬度(latitude)
  */
-export interface Point {
+export interface ClusterBasePoint {
   x: number; // 经度 (longitude)
   y: number; // 纬度 (latitude)
   weight?: number;
@@ -38,7 +38,7 @@ export interface ClusterOptions {
 /**
  * 聚类对象接口
  */
-export interface Cluster<T extends Point = Point> {
+export interface Cluster<T extends ClusterBasePoint = ClusterBasePoint> {
   center: T;
   points: T[];
   radius: number;
@@ -51,7 +51,9 @@ export const EARTH_RADIUS = 6371.0;
 /**
  * 抽象聚类管理器类
  */
-export abstract class ClusterManager<T extends Point = Point> {
+export abstract class ClusterManager<
+  T extends ClusterBasePoint = ClusterBasePoint
+> {
   protected points: T[] = [];
   protected clusters: Cluster<T>[] = [];
   protected options: ClusterOptions;
@@ -77,7 +79,10 @@ export abstract class ClusterManager<T extends Point = Point> {
    * @param options 可选的聚类选项，用于覆盖默认选项
    * @returns 聚类结果
    */
-  public updateClusters(points?: T[], options?: Partial<ClusterOptions>): Cluster<T>[] {
+  public updateClusters(
+    points?: T[],
+    options?: Partial<ClusterOptions>
+  ): Cluster<T>[] {
     // 如果提供了新的点数据，则更新点数据
     if (points !== undefined) {
       this.points = [...points];
@@ -107,7 +112,10 @@ export abstract class ClusterManager<T extends Point = Point> {
    * @param p2 点2
    * @returns 距离（米）
    */
-  protected calculateHaversineDistance(p1: Point, p2: Point): number {
+  protected calculateHaversineDistance(
+    p1: ClusterBasePoint,
+    p2: ClusterBasePoint
+  ): number {
     // 转换为弧度
     const lat1 = (p1.y * Math.PI) / 180;
     const lon1 = (p1.x * Math.PI) / 180;
@@ -134,10 +142,10 @@ export abstract class ClusterManager<T extends Point = Point> {
    * @returns 转换后的点
    */
   protected convertCoordinateSystem(
-    point: Point,
+    point: ClusterBasePoint,
     from: CoordinateSystem,
     to: CoordinateSystem
-  ): Point {
+  ): ClusterBasePoint {
     // 如果坐标系相同，直接返回原始点
     if (from === to) {
       return { ...point };

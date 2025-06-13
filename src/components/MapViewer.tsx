@@ -1,40 +1,39 @@
 import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
   forwardRef,
+  useCallback,
+  useEffect,
   useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
+  ClusterAlgorithmType,
+  DataPoint,
+  FilterState,
+  MapPoint,
   MapViewerProps,
   MapViewerRef,
-  MapPoint,
-  FilterState,
-  MetaMapData,
-  DataPoint,
-  ClusterAlgorithmType,
 } from "../types";
 import { MetaMap } from "../utils/metaMap";
-import ToastNotification, { ToastProps } from "./ToastNotification";
 import "./MapViewer.css";
+import ToastNotification, { ToastProps } from "./ToastNotification";
 
 // 聚类相关导入
+import { BasicClusterManager } from "../clusters/basic_cluster";
 import {
-  ClusterManager,
-  Point as ClusterBasePoint,
   Cluster,
-  CoordinateSystem,
+  ClusterBasePoint,
+  ClusterManager,
   ClusterOptions,
+  CoordinateSystem,
 } from "../clusters/cluster_manager";
 import { DensityClusterManager } from "../clusters/density_cluster";
-import { HierarchicalClusterManager } from "../clusters/hierarchical_cluster";
 import { DistanceClusterManager } from "../clusters/distance_cluster";
-import { BasicClusterManager } from "../clusters/basic_cluster";
+import { HierarchicalClusterManager } from "../clusters/hierarchical_cluster";
 
 // 腾讯地图API导入
-import { MultiMarker, TMap, MultiLabel } from "tlbs-map-react";
+import { MultiLabel, MultiMarker, TMap } from "tlbs-map-react";
 
 // 缩放级别对应的聚类半径映射
 const MAP_SCALE_TO_RATIO = {
