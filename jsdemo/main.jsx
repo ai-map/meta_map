@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
 // 从主包导入组件和必要的工具
-import MapViewer, { validateMetaMapData } from "@ai-map/meta_map";
+import { MapViewer, validateMetaMapData } from "@ai-map/meta_map";
 
 // 加载示例数据
 async function loadMapData() {
@@ -101,26 +101,8 @@ const Demo = () => {
   }
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* 简单的标题栏 */}
-      <div style={{
-        padding: "16px",
-        backgroundColor: "#f5f5f5",
-        borderBottom: "1px solid #ddd",
-        textAlign: "center"
-      }}>
-        <h1 style={{ margin: 0, fontSize: "24px", color: "#333" }}>
-          Meta Map 演示
-        </h1>
-        <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
-          展示 {mapData.data.length} 个数据点
-        </p>
-      </div>
-
-      {/* 地图容器 */}
-      <div style={{ flex: 1 }}>
-        <MapViewer mapData={mapData} />
-      </div>
+    <div style={{ height: "100vh" }}>
+      <MapViewer mapData={mapData} />
     </div>
   );
 };
@@ -128,4 +110,11 @@ const Demo = () => {
 // 渲染应用
 const container = document.getElementById("root");
 const root = createRoot(container);
-root.render(<Demo />); 
+root.render(<Demo />);
+
+// 在开发环境下暴露到全局变量以便调试
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+  window.meta_map_demo = {
+    validateMetaMapData
+  };
+} 

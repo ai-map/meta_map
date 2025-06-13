@@ -1,7 +1,7 @@
 {
   "name": "jsdemo",
   "version": "1.0.0",
-  "description": "这是一个使用纯 **JavaScript + React** 实现的 `@ai-map/meta_map` 组件演示项目，相对于 TypeScript 版本的 demo，它展示了如何在 JavaScript 项目中使用该组件库。",
+  "description": "JavaScript/React 版本的 Meta Map 组件演示项目，展示地图聚类、筛选、交互等完整功能。",
   "main": "vite.config.js",
   "dependencies": {
     "@ai-map/meta_map": "file:../",
@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["map", "react", "clustering", "visualization", "javascript", "demo"],
   "author": "",
-  "license": "ISC"
+  "license": "MIT"
 }

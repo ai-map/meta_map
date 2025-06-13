@@ -47,7 +47,53 @@ export abstract class ClusterManager<
   protected points: T[] = [];
   protected clusters: Cluster<T>[] = [];
   protected options: ClusterOptions;
-  protected clusterIdCounter: number = 0; // 聚类ID计数器
+  protected clusterIdCounter: number = 0; // 实例计数器
+
+  // 静态计数器，用于全局ID生成
+  private static globalIdCounter: number = 0;
+
+  /**
+   * 重置全局ID计数器
+   */
+  public static resetGlobalIdCounter(): void {
+    ClusterManager.globalIdCounter = 0;
+  }
+
+  /**
+   * 生成单点标记ID（静态方法）
+   * @returns 单点标记ID
+   */
+  public static generateMarkerLabelId(): string {
+    return `marker-${ClusterManager.globalIdCounter++}`;
+  }
+
+  /**
+   * 生成聚类标记ID（静态方法）
+   * @returns 聚类标记ID
+   */
+  public static generateClusterLabelId(): string {
+    return `cluster-${ClusterManager.globalIdCounter++}`;
+  }
+
+  /**
+   * 生成聚类标签ID（静态方法）
+   * @param clusterId 聚类ID
+   * @returns 聚类标签ID
+   */
+  public static generateClusterMarkerId(clusterId: string): string {
+    return `label-${clusterId}`;
+  }
+
+  /**
+   * 从ID中提取数字（静态方法）
+   * @param id 包含数字的ID字符串
+   * @param defaultValue 默认值
+   * @returns 提取的数字
+   */
+  public static extractIdNumber(id: string, defaultValue: number = 1): number {
+    const match = id.match(/\d+/);
+    return match ? parseInt(match[0]) : defaultValue;
+  }
 
   /**
    * 构造函数
@@ -91,7 +137,7 @@ export abstract class ClusterManager<
    * @returns 噪声点聚类ID
    */
   protected generateNoiseClusterId(): string {
-    return `noise_${this.clusterIdCounter++}`;
+    return `marker-${this.clusterIdCounter++}`;
   }
 
   /**
@@ -99,7 +145,7 @@ export abstract class ClusterManager<
    * @returns 合并聚类ID
    */
   protected generateMergedClusterId(): string {
-    return `cluster_${this.clusterIdCounter++}`;
+    return `cluster-${this.clusterIdCounter++}`;
   }
 
   /**

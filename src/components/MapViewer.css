@@ -578,7 +578,7 @@
   padding: var(--spacing-sm);
   
   /* 控制 */
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 .point-item {
@@ -703,7 +703,8 @@
 .detail-section {
   /* 继承宽度，控制高度 */
   width: 100%;
-  height: var(--detail-height);
+  min-height: var(--detail-height);
+  height: 100%;
   flex-shrink: 0;
   
   /* 外观 */
