@@ -6,7 +6,7 @@ export default defineConfig({
   root: './',
   publicDir: '../example',
   server: {
-    port: 3006,
+    port: 3004,
     host: true,
     open: true
   },

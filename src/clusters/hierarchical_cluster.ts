@@ -2,7 +2,7 @@ import {
   Cluster,
   ClusterBasePoint,
   ClusterManager,
-  ClusterOptions
+  ClusterOptions,
 } from "./cluster_manager";
 
 /**
@@ -36,7 +36,7 @@ export class HierarchicalClusterManager<
             center: { ...points[0] },
             points: [...points],
             radius: 0,
-            id: "single_0",
+            id: this.generateSingleClusterId(),
           },
         ];
       }
@@ -47,7 +47,7 @@ export class HierarchicalClusterManager<
           center,
           points: [...points],
           radius: this.calculateClusterRadius(points, center),
-          id: "cluster_0",
+          id: this.generateClusterId(),
         },
       ];
     }
@@ -78,7 +78,7 @@ export class HierarchicalClusterManager<
           center,
           points: [...points],
           radius: this.calculateClusterRadius(points, center),
-          id: `cluster_${depth}_${Math.random().toString(36).slice(2, 8)}`,
+          id: this.generateClusterId(),
         },
       ];
     }
@@ -150,6 +150,7 @@ export class HierarchicalClusterManager<
       processed.add(currentCluster);
 
       let merged = true;
+
       while (merged) {
         merged = false;
 
@@ -171,12 +172,13 @@ export class HierarchicalClusterManager<
             ];
             // 计算新的中心点
             const center = this.calculateClusterCenter(mergedPoints);
+
             // 创建新的聚类
             currentCluster = {
               center,
               points: mergedPoints,
               radius: this.calculateClusterRadius(mergedPoints, center),
-              id: `merged_${currentCluster.id}_${clusters[j].id}`,
+              id: this.generateMergedClusterId(),
             };
 
             processed.add(clusters[j]);
@@ -263,46 +265,3 @@ export class HierarchicalClusterManager<
     return maxDistance;
   }
 }
-
-/**
- * 使用示例：
- *
- * // 创建一个层次聚类管理器实例
- * const hierarchicalCluster = new HierarchicalClusterManager({
- *   radius: 500, // 500米的合并距离
- *   minPoints: 2, // 最小点数量
- *   maxZoom: 5   // 最大递归深度
- * });
- *
- * // 添加测试点（经纬度）
- * hierarchicalCluster.addPoints([
- *   // 北京区域点群
- *   { x: 116.397428, y: 39.90923 },
- *   { x: 116.398428, y: 39.91023 },
- *   { x: 116.396428, y: 39.90823 },
- *   // 上海区域点群
- *   { x: 121.473701, y: 31.230416 },
- *   { x: 121.474701, y: 31.231416 },
- *   { x: 121.472701, y: 31.229416 },
- *   // 广州区域点群
- *   { x: 113.264385, y: 23.129112 },
- *   { x: 113.265385, y: 23.130112 },
- *   { x: 113.263385, y: 23.128112 }
- * ]);
- *
- * // 执行聚类
- * const clusters = hierarchicalCluster.updateClusters();
- * console.log(`形成 ${clusters.length} 个聚类`);
- *
- * // 监听聚类变化
- * hierarchicalCluster.on('cluster', (event) => {
- *   const clusters = event.payload.clusters;
- *   clusters.forEach(cluster => {
- *     console.log(
- *       `聚类ID: ${cluster.id}, 点数量: ${cluster.points.length}, ` +
- *       `中心: (${cluster.center.x.toFixed(6)}, ${cluster.center.y.toFixed(6)}), ` +
- *       `半径: ${cluster.radius.toFixed(2)}米`
- *     );
- *   });
- * });
- */

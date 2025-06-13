@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  ClusterAlgorithmType,
   MapViewer,
   MapViewerRef,
   MetaMapData,
-  ClusterAlgorithmType,
 } from "../src";
 
 // 加载示例数据

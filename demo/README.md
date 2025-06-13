@@ -30,7 +30,7 @@
 npm run dev
 ```
 
-应用将在 http://localhost:3006 启动
+应用将在 http://localhost:3004 启动
 
 ### 构建生产版本
 ```bash

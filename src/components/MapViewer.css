@@ -578,7 +578,7 @@
   padding: var(--spacing-sm);
   
   /* 控制 */
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .point-item {

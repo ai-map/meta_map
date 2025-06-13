@@ -4,15 +4,6 @@
  */
 
 /**
- * 坐标系统枚举
- */
-export enum CoordinateSystem {
-  WGS84 = "wgs84", // 标准GPS坐标系统
-  GCJ02 = "gcj02", // 中国国测局坐标系统(火星坐标)
-  BD09 = "bd09", // 百度坐标系统
-}
-
-/**
  * 点对象接口
  * x 对应经度(longitude)，y 对应纬度(latitude)
  */
@@ -32,7 +23,6 @@ export interface ClusterOptions {
   maxZoom?: number; // 最大缩放级别，超过此级别不聚类
   minPoints?: number; // 形成聚类的最小点数
   weightFactor?: number; // 点权重因子
-  coordinateSystem?: CoordinateSystem; // 坐标系统
 }
 
 /**
@@ -57,6 +47,7 @@ export abstract class ClusterManager<
   protected points: T[] = [];
   protected clusters: Cluster<T>[] = [];
   protected options: ClusterOptions;
+  protected clusterIdCounter: number = 0; // 聚类ID计数器
 
   /**
    * 构造函数
@@ -68,9 +59,47 @@ export abstract class ClusterManager<
       maxZoom: 18,
       minPoints: 2,
       weightFactor: 1,
-      coordinateSystem: CoordinateSystem.WGS84,
       ...options,
     };
+  }
+
+  /**
+   * 重置聚类ID计数器
+   */
+  protected resetClusterIdCounter(): void {
+    this.clusterIdCounter = 0;
+  }
+
+  /**
+   * 生成单点聚类ID
+   * @returns 单点聚类ID
+   */
+  protected generateSingleClusterId(): string {
+    return `marker-${this.clusterIdCounter++}`;
+  }
+
+  /**
+   * 生成普通聚类ID
+   * @returns 普通聚类ID
+   */
+  protected generateClusterId(): string {
+    return `cluster-${this.clusterIdCounter++}`;
+  }
+
+  /**
+   * 生成噪声点聚类ID
+   * @returns 噪声点聚类ID
+   */
+  protected generateNoiseClusterId(): string {
+    return `noise_${this.clusterIdCounter++}`;
+  }
+
+  /**
+   * 生成合并聚类ID
+   * @returns 合并聚类ID
+   */
+  protected generateMergedClusterId(): string {
+    return `cluster_${this.clusterIdCounter++}`;
   }
 
   /**
@@ -92,6 +121,9 @@ export abstract class ClusterManager<
     if (options) {
       this.options = { ...this.options, ...options };
     }
+
+    // 重置计数器
+    this.resetClusterIdCounter();
 
     this.clusters = this.performClustering(this.points, this.options);
     return [...this.clusters];
@@ -132,28 +164,6 @@ export abstract class ClusterManager<
 
     // 地球半径（千米）* 弧度 = 距离（千米）
     return EARTH_RADIUS * c * 1000; // 转换为米
-  }
-
-  /**
-   * 坐标系转换（如需使用，子类可以实现）
-   * @param point 原始点
-   * @param from 源坐标系
-   * @param to 目标坐标系
-   * @returns 转换后的点
-   */
-  protected convertCoordinateSystem(
-    point: ClusterBasePoint,
-    from: CoordinateSystem,
-    to: CoordinateSystem
-  ): ClusterBasePoint {
-    // 如果坐标系相同，直接返回原始点
-    if (from === to) {
-      return { ...point };
-    }
-
-    // 实际应用中需要根据不同坐标系实现转换逻辑
-    console.warn("Coordinate system conversion not implemented");
-    return { ...point };
   }
 
   /**

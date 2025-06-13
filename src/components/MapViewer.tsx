@@ -10,8 +10,6 @@ import React, {
 import {
   ClusterAlgorithmType,
   DataPoint,
-  FilterState,
-  MapPoint,
   MapViewerProps,
   MapViewerRef,
 } from "../types";
@@ -26,7 +24,6 @@ import {
   ClusterBasePoint,
   ClusterManager,
   ClusterOptions,
-  CoordinateSystem,
 } from "../clusters/cluster_manager";
 import { DensityClusterManager } from "../clusters/density_cluster";
 import { DistanceClusterManager } from "../clusters/distance_cluster";
@@ -57,6 +54,11 @@ const MAP_SCALE_TO_RATIO = {
   "20": 5,
 };
 
+interface MapPoint extends DataPoint {
+  latitude: number; // 兼容字段，映射自 center.lat
+  longitude: number; // 兼容字段，映射自 center.lng
+  index?: number;
+}
 // 聚类项目接口
 interface ClusterItem extends ClusterBasePoint {
   id: string;
@@ -120,12 +122,24 @@ type Marker = {
   position: Location;
 };
 
-const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
+interface FilterState {
+  [category: string]: {
+    [value: string]: boolean;
+  };
+}
+
+const initialCenter = {
+  lat: 31.230416,
+  lng: 121.473701,
+};
+const initialZoom = 10;
+const minZoom = 3;
+const maxZoom = 18;
+
+export const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
   (
     {
       mapData,
-      className = "",
-      style = {},
       defaultView = "map",
       clusterAlgorithm = ClusterAlgorithmType.HIERARCHICAL,
       minClusterSize = 2,
@@ -155,19 +169,8 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     const [center, setCenter] = useState<{
       lat: number;
       lng: number;
-    }>({
-      lat: 31.230416,
-      lng: 121.473701,
-    });
-    const [zoom, setZoom] = useState<number>(10);
-    const [minZoom] = useState<number>(3);
-    const [maxZoom] = useState<number>(18);
-    // Center 和 Scale 相关的 ref，避免闭包问题
-    const centerRef = useRef<{ lat: number; lng: number }>({
-      lat: 39.9042,
-      lng: 116.4074,
-    });
-    const zoomRef = useRef<number>(10);
+    }>({ ...initialCenter });
+    const [zoom, setZoom] = useState<number>(initialZoom);
 
     // 地图事件状态
 
@@ -398,12 +401,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       markersRef.current = markers;
       clusterLabelsRef.current = clusterLabels;
     }, [markers, clusterLabels]);
-
-    // 同步 center 和 scale state 到 ref
-    useEffect(() => {
-      centerRef.current = center;
-      zoomRef.current = zoom;
-    }, [center, zoom]);
 
     const getFilteredPoints = () => {
       if (filteredPointsRef.current) return filteredPointsRef.current;
@@ -727,7 +724,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       if (!cluster) return;
 
       // 获取当前缩放级别
-      const currentMapScale = zoomRef.current;
+      const currentMapScale = getMapZoom();
       // 放大到适当级别，但不超过最大缩放
       const compensation = 1.5;
       const newScale = Math.min(currentMapScale + 1, maxZoom - compensation);
@@ -803,7 +800,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
           }
 
           // 获取当前缩放级别
-          const currentMapScale = zoomRef.current;
+          const currentMapScale = getMapZoom();
           const compensation = 1.5;
 
           // 清除所选状态
@@ -850,6 +847,14 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       });
       setCenter(center);
       setZoom(zoom);
+    };
+
+    const getMapZoom = () => {
+      return mapRef.current?.getZoom() || initialZoom;
+    };
+
+    const getMapCenter = () => {
+      return mapRef.current?.getCenter() || { ...initialCenter };
     };
 
     // 重置地图
@@ -920,7 +925,6 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       const baseOptions = {
         radius: clusterRadiusRef.current,
         minPoints: clusterMinPointsRef.current,
-        coordinateSystem: CoordinateSystem.GCJ02,
       };
 
       switch (clusterAlgorithmRef.current) {
@@ -942,7 +946,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
           // 层次聚类对半径更敏感，使用原始参数
           const hierarchicalOptions = {
             ...baseOptions,
-            maxZoom: 18, // 最大递归深度
+            maxZoom, // 最大递归深度
           };
           clusterManagerRef.current = new HierarchicalClusterManager(
             hierarchicalOptions
@@ -1123,7 +1127,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       }
 
       // 获取当前缩放级别
-      const currentMapScale = zoomRef.current;
+      const currentMapScale = getMapZoom();
 
       // 计算聚类半径
       const roundedScale = Math.ceil(currentMapScale).toString();
@@ -1174,6 +1178,7 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         console.log("⏰ BoundsChange 防抖完成，开始调整聚类参数");
         const { needsUpdate, newRadius } = getClusterRadius();
         if (needsUpdate && newRadius) {
+          console.log("🔧 聚类半径已更新:", newRadius);
           // 使用新的半径参数更新聚类
           const options: Partial<ClusterOptions> = {
             radius: newRadius,
@@ -1259,26 +1264,15 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
       ref,
       () => ({
         resetMap,
-        selectPoint,
-        updateClusters,
-        adjustClusterParameters: getClusterRadius,
-        getSelectedPoint: () => getSelectedPoint(),
-        getFilteredPoints: () => getFilteredPoints(),
-        getClusters: () => clustersRef.current,
         getClusterRadius: () => clusterRadiusRef.current,
-        getCenter: () => centerRef.current,
-        getZoom: () => zoomRef.current,
-        // 新增的聚类配置方法
+        getCenter: () => mapRef.current?.getCenter() || { ...initialCenter },
+        getZoom: getMapZoom,
       }),
       []
     );
 
     return (
-      <div
-        ref={containerRef}
-        className={`container ${className}`}
-        style={style}
-      >
+      <div ref={containerRef} className={"container"}>
         {/* 地图加载遮罩层 */}
         {mapLoading && (
           <div className="map-loading-overlay">
@@ -1416,8 +1410,8 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
                       center: center,
                       viewMode: "2D",
                       zoom: zoom,
-                      minZoom: minZoom,
-                      maxZoom: maxZoom,
+                      minZoom,
+                      maxZoom,
                       baseMap: {
                         type: "vector",
                         features: ["base", "label", "point"],
@@ -1648,7 +1642,3 @@ const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
     );
   }
 );
-
-MapViewer.displayName = "MapViewer";
-
-export default MapViewer;

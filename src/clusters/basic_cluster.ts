@@ -73,7 +73,7 @@ export class BasicClusterManager<
           center: { ...currentPoint },
           points: clusterPoints,
           radius: 0,
-          id: currentPoint.id || `basic_single_${i}`,
+          id: this.generateSingleClusterId(),
         });
       } else {
         // 聚类（多个点）
@@ -82,7 +82,7 @@ export class BasicClusterManager<
           center,
           points: clusterPoints,
           radius: CLUSTER_DISTANCE, // 使用聚类距离作为半径
-          id: `basic_cluster_${i}_${clusterPoints.length}`,
+          id: this.generateClusterId(),
         });
       }
     }

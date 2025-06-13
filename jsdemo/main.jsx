@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
 // 从主包导入组件和必要的工具
-import MapViewer, { validateStandardMapData } from "@ai-map/meta_map";
+import MapViewer, { validateMetaMapData } from "@ai-map/meta_map";
 
 // 加载示例数据
 async function loadMapData() {
@@ -15,7 +15,7 @@ async function loadMapData() {
     const data = await response.json();
 
     // 验证数据格式
-    const validation = validateStandardMapData(data);
+    const validation = validateMetaMapData(data);
     if (!validation.valid) {
       throw new Error(`数据验证失败: ${validation.errors?.join(", ")}`);
     }

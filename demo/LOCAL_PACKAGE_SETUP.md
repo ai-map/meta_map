@@ -35,7 +35,7 @@ export default defineConfig({
 
 ### 导入测试
 - ✅ 默认导入：`import MapViewer from "@ai-map/meta_map"`
-- ✅ 命名导入：`import { ClusterAlgorithmType, validateStandardMapData } from "@ai-map/meta_map"`
+- ✅ 命名导入：`import { ClusterAlgorithmType, validateMetaMapData } from "@ai-map/meta_map"`
 - ✅ 类型导入：`import { StandardMapData, MapViewerProps } from "@ai-map/meta_map"`
 
 ### 功能测试
@@ -69,7 +69,7 @@ import React from 'react';
 import MapViewer, { 
   ClusterAlgorithmType, 
   StandardMapData,
-  validateStandardMapData 
+  validateMetaMapData 
 } from '@ai-map/meta_map';
 
 // 使用示例

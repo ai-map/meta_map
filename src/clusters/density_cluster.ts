@@ -33,7 +33,6 @@ export class DensityClusterManager<
     points.forEach((p) => pointStatus.set(p, 0));
 
     const clusters: Cluster<T>[] = [];
-    let currentClusterId = 0;
 
     // 遍历所有点
     for (const point of points) {
@@ -98,7 +97,7 @@ export class DensityClusterManager<
         center,
         points: currentClusterPoints,
         radius: clusterRadius,
-        id: `cluster_${currentClusterId++}`,
+        id: this.generateClusterId(),
       };
 
       clusters.push(cluster);
@@ -111,7 +110,7 @@ export class DensityClusterManager<
           center: { ...point },
           points: [point],
           radius: 0,
-          id: `noise_${currentClusterId++}`,
+          id: this.generateNoiseClusterId(),
         };
 
         clusters.push(singlePointCluster);

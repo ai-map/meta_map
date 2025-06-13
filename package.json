@@ -2,15 +2,15 @@
   "name": "@ai-map/meta_map",
   "version": "0.2.1",
   "description": "一个基于 React 和 TypeScript 的地图查看器组件",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/export.js",
+  "module": "dist/export.js",
+  "types": "dist/export.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./dist/export.d.ts",
+      "import": "./dist/export.js",
+      "require": "./dist/export.js",
+      "default": "./dist/export.js"
     },
     "./package.json": "./package.json"
   },
@@ -33,7 +33,10 @@
     "clean": "if exist dist rmdir /s /q dist"
   },
   "dependencies": {
+    "@json-schema-tools/meta-schema": "^1.7.5",
     "@types/leaflet": "^1.9.8",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "react-leaflet": "^4.2.1",
@@ -45,9 +48,9 @@
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
+    "leaflet": "^1.9.4",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "leaflet": "^1.9.4",
     "react-leaflet": "^4.2.1",
     "tlbs-map-react": "^1.1.0"
   }

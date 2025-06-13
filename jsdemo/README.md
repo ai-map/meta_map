@@ -46,7 +46,7 @@ jsdemo/
 ### 导入组件
 
 ```javascript
-import MapViewer, { validateStandardMapData } from "@ai-map/meta_map";
+import MapViewer, { validateMetaMapData } from "@ai-map/meta_map";
 ```
 
 ### 基本用法

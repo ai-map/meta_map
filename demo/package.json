@@ -4,9 +4,9 @@
   "description": "Meta Map Viewer Demo",
   "main": "main.tsx",
   "scripts": {
-    "dev": "vite --port 3006 --host",
+    "dev": "vite --port 3004 --host",
     "build": "vite build",
-    "preview": "vite preview --port 3006"
+    "preview": "vite preview --port 3004"
   },
   "dependencies": {
     "@ai-map/meta_map": "file:../",

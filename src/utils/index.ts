@@ -1,9 +1,5 @@
 // MetaMap 工具导出
-export { MetaMap, metaMapUtils } from "./metaMap";
+export { MetaMap } from "./metaMap";
 
 // 验证器导出
-export {
-  validateMapData,
-  validateStandardMapData,
-  validateNewDataPoint,
-} from "./validator";
+export { validateMetaMapData } from "./validator";

@@ -25,7 +25,7 @@ npm install react react-dom leaflet react-leaflet tlbs-map-react leaflet.markerc
   "dependencies": {
     "@ai-map/meta_map": "latest",
     "leaflet": "^1.9.4",
-    "leaflet.markercluster": "^1.5.3", 
+    "leaflet.markercluster": "^1.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
@@ -55,14 +55,12 @@ function App() {
 ### 命名导入其他组件和工具
 
 ```javascript
-import MapViewer, { 
-  FilterPanel, 
-  PointsList, 
+import MapViewer, {
+  FilterPanel,
+  PointsList,
   PointDetail,
   MetaMap,
-  validateMapData
 } from "@ai-map/meta_map";
-
 ```
 
 ### TypeScript 支持
@@ -88,7 +86,7 @@ const App: React.FC = () => {
   "dependencies": {
     "@ai-map/meta_map": "file:../path/to/meta_map",
     "leaflet": "^1.9.4",
-    "leaflet.markercluster": "^1.5.3", 
+    "leaflet.markercluster": "^1.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
@@ -103,7 +101,7 @@ const App: React.FC = () => {
 // vite.config.ts
 export default defineConfig({
   optimizeDeps: {
-    include: ['@ai-map/meta_map']
-  }
+    include: ["@ai-map/meta_map"],
+  },
 });
 ```

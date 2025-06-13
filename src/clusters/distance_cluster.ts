@@ -2,7 +2,7 @@ import {
   Cluster,
   ClusterBasePoint,
   ClusterManager,
-  ClusterOptions
+  ClusterOptions,
 } from "./cluster_manager";
 
 /**
@@ -55,7 +55,7 @@ export class DistanceClusterManager<
           center,
           points: nearbyPoints,
           radius: this.calculateClusterRadius(nearbyPoints, center),
-          id: `cluster_${clusters.length}`,
+          id: this.generateClusterId(),
         };
 
         clusters.push(cluster);
@@ -68,7 +68,7 @@ export class DistanceClusterManager<
           center: { ...point },
           points: [point],
           radius: 0,
-          id: `single_${clusters.length}`,
+          id: this.generateSingleClusterId(),
         };
 
         clusters.push(singlePointCluster);
@@ -139,37 +139,3 @@ export class DistanceClusterManager<
     return maxDistance;
   }
 }
-
-/**
- * 使用示例：
- *
- * // 创建一个基于距离的聚类管理器实例
- * const clusterManager = new DistanceClusterManager({
- *   radius: 100, // 100米的聚类半径
- *   minPoints: 3
- * });
- *
- * // 添加多个点（经纬度）
- * clusterManager.addPoints([
- *   { x: 116.397428, y: 39.90923, weight: 1 }, // 北京天安门
- *   { x: 116.398438, y: 39.91023, weight: 2 }, // 附近点1
- *   { x: 116.396418, y: 39.90823, weight: 1 }, // 附近点2
- *   { x: 121.473701, y: 31.230416, weight: 1 }, // 上海人民广场
- *   { x: 121.474701, y: 31.231416, weight: 1 }  // 附近点
- * ]);
- *
- * // 执行聚类
- * const clusters = clusterManager.updateClusters();
- *
- * // 监听聚类事件
- * clusterManager.on('cluster', (event) => {
- *   const clusters = event.payload.clusters;
- *   console.log(`聚类完成，共形成 ${clusters.length} 个聚类`);
- * });
- *
- * // 移除点
- * clusterManager.removePoint({ x: 116.397428, y: 39.90923 });
- *
- * // 更新聚类，使用新的参数（500米半径）
- * clusterManager.updateClusters({ radius: 500 });
- */

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://meta-map.schema.json",
   "title": "Meta Map Data Schema",
   "description": "统一地图数据格式的 JSON Schema",
@@ -91,13 +91,13 @@
       "type": "array",
       "description": "地图数据点列表",
       "items": {
-        "$ref": "#/$defs/DataPoint"
+        "$ref": "#/definitions/DataPoint"
       },
       "minItems": 0
     }
   },
   "additionalProperties": false,
-  "$defs": {
+  "definitions": {
     "DataPoint": {
       "type": "object",
       "description": "地图上的数据点",
@@ -163,4 +163,4 @@
       "additionalProperties": false
     }
   }
-} 
+}
