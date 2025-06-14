@@ -4,6 +4,7 @@
   "description": "React Scripts 版本的 Meta Map 组件演示项目，支持联调热更新。",
   "private": true,
   "dependencies": {
+    "@ai-map/meta_map": "file:../meta_map",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",

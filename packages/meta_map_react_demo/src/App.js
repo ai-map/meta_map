@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 
 // 从 dist 目录直接导入组件
-import { ClusterAlgorithmType, MapViewer, validateMetaMapData } from './dist';
+import { ClusterAlgorithmType, MapViewer, validateMetaMapData } from '@ai-map/meta_map';
 
 // 加载新华宠友地图数据
 const loadXinhuaPetData = async () => {

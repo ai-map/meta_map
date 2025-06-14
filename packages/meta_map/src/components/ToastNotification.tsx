@@ -18,7 +18,7 @@ export const ToastNotification: React.FC<ToastNotificationProps> = ({
   onRemoveToast,
 }) => {
   useEffect(() => {
-    const timers: number[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     
     toasts.forEach((toast, index) => {
       if (toast.duration && toast.duration > 0) {

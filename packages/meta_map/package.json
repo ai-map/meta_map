@@ -28,9 +28,10 @@
   "author": "Your Name",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && xcopy \"src\\components\\*.css\" \"dist\\components\\\" /Y",
+    "build": "npm run clean && webpack --mode=production && tsc --project tsconfig.build.json",
+    "build:dev": "npm run clean && webpack --mode=development && tsc --project tsconfig.build.json",
     "build:demo": "cd react-demo && npm run build:library",
-    "dev": "tsc --watch",
+    "dev": "webpack --mode=development --watch",
     "clean": "if exist dist rmdir /s /q dist",
     "dev:link": "npm run build && npm link",
     "demo:react": "cd react-demo && npm run dev:windows",
@@ -53,14 +54,20 @@
     "@typescript-eslint/parser": "^8.34.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
+    "css-loader": "^7.1.2",
     "eslint": "^9.28.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "mini-css-extract-plugin": "^2.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
+    "style-loader": "^4.0.0",
     "tlbs-map-react": "^1.1.0",
-    "typescript": "^5.0.0"
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.0.0",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
   },
   "peerDependencies": {
     "leaflet": "^1.9.4"
