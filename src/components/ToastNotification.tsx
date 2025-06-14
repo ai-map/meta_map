@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import './ToastNotification.css';
+import React, { useEffect } from "react";
+import "./ToastNotification.css";
 
 export interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'info' | 'warning';
+  type?: "success" | "error" | "info" | "warning";
   duration?: number; // 自动关闭时间，毫秒，0表示不自动关闭
   onClose?: () => void;
 }
@@ -13,7 +13,7 @@ interface ToastNotificationProps {
   onRemoveToast: (index: number) => void;
 }
 
-const ToastNotification: React.FC<ToastNotificationProps> = ({
+export const ToastNotification: React.FC<ToastNotificationProps> = ({
   toasts,
   onRemoveToast,
 }) => {
@@ -35,7 +35,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({
       {toasts.map((toast, index) => (
         <div
           key={index}
-          className={`toast toast-${toast.type || 'info'}`}
+          className={`toast toast-${toast.type || "info"}`}
           onClick={() => {
             onRemoveToast(index);
             toast.onClose?.();
@@ -49,5 +49,3 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({
     </div>
   );
 };
-
-export default ToastNotification; 

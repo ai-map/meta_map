@@ -1,2 +1,2 @@
-// 主要组件导出
+export { ToastNotification } from "./ToastNotification";
 export { MapViewer } from "./MapViewer";

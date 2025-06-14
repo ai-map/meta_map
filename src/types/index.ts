@@ -48,7 +48,7 @@ export enum ClusterAlgorithmType {
   DENSITY = "density",
   DISTANCE = "distance",
   HIERARCHICAL = "hierarchical",
-  NONE = "none",
+  BASIC = "basic",
 }
 
 // MapViewer 组件属性类型

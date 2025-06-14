@@ -2,15 +2,15 @@
   "name": "@ai-map/meta_map",
   "version": "0.3.0",
   "description": "一个基于 React 和 TypeScript 的地图查看器组件",
-  "main": "dist/export.js",
-  "module": "dist/export.js",
-  "types": "dist/export.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/export.d.ts",
-      "import": "./dist/export.js",
-      "require": "./dist/export.js",
-      "default": "./dist/export.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },

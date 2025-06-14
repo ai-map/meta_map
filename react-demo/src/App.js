@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
 
-// 从 meta_map 库导入组件
-import { MapViewer, validateMetaMapData, ClusterAlgorithmType } from '@ai-map/meta_map';
+// 从 dist 目录直接导入组件
+import { ClusterAlgorithmType, MapViewer, validateMetaMapData } from './dist/index.js';
 
 
 
@@ -46,10 +46,10 @@ function App() {
         const data = await loadXinhuaPetData();
 
         // 验证数据格式
-        // const validation = validateMetaMapData(data);
-        // if (!validation.valid) {
-        //   throw new Error(`数据验证失败: ${validation.errors?.join(', ')}`);
-        // }
+        const validation = validateMetaMapData(data);
+        if (!validation.valid) {
+          throw new Error(`数据验证失败: ${validation.errors?.join(', ')}`);
+        }
 
         setMapData(data);
         setDebugInfo(`✅ ${data.name || '地图数据'}加载成功 (${data.data?.length || 0}个地点) - ${new Date().toLocaleTimeString()}`);
@@ -65,16 +65,6 @@ function App() {
     loadData();
   }, []);
 
-  // 热更新检测
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const interval = setInterval(() => {
-        setDebugInfo(`🔄 热更新检测中... - ${new Date().toLocaleTimeString()}`);
-      }, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, []);
 
   if (loading) {
     return (
@@ -119,80 +109,13 @@ function App() {
 
   return (
     <div className="App">
-      {/* 开发调试面板 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="debug-panel">
-          <div className="debug-header">
-            <h3>🛠️ 新华宠友地图调试面板</h3>
-            <div className="debug-status">
-              <div>{debugInfo}</div>
-              {mapData && (
-                <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>
-                  📊 {mapData.name} | {mapData.data?.length || 0}个地点 |
-                  中心: {mapData.center?.lat?.toFixed(4)}, {mapData.center?.lng?.toFixed(4)}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="debug-controls">
-            <div className="control-group">
-              <label>聚类算法:</label>
-              <select
-                value={clusterAlgorithm}
-                onChange={(e) => setClusterAlgorithm(e.target.value)}
-              >
-                <option value={ClusterAlgorithmType.NONE}>无聚类</option>
-                <option value={ClusterAlgorithmType.BASIC}>基础聚类</option>
-                <option value={ClusterAlgorithmType.DISTANCE}>距离聚类</option>
-                <option value={ClusterAlgorithmType.DENSITY}>密度聚类</option>
-                <option value={ClusterAlgorithmType.HIERARCHICAL}>分层聚类</option>
-              </select>
-            </div>
-
-            <div className="control-group">
-              <label>最小聚类大小:</label>
-              <input
-                type="number"
-                min="2"
-                max="20"
-                value={minClusterSize}
-                onChange={(e) => setMinClusterSize(parseInt(e.target.value) || 2)}
-              />
-            </div>
-
-            <div className="control-group">
-              <label>聚类距离:</label>
-              <input
-                type="number"
-                min="50"
-                max="1000"
-                step="50"
-                value={clusterDistance}
-                onChange={(e) => setClusterDistance(parseInt(e.target.value) || 100)}
-              />
-            </div>
-
-            <button
-              onClick={() => window.location.reload()}
-              className="reset-btn"
-            >
-              <i className="fa-solid fa-undo"></i> 重置地图
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 地图容器 */}
-      <div className="map-wrapper">
-        <MapViewer
-          mapData={mapData}
-          clusterAlgorithm={clusterAlgorithm}
-          minClusterSize={minClusterSize}
-          clusterDistance={clusterDistance}
-          defaultView="map"
-        />
-      </div>
+      <MapViewer
+        mapData={mapData}
+        clusterAlgorithm={clusterAlgorithm}
+        minClusterSize={minClusterSize}
+        clusterDistance={clusterDistance}
+        defaultView="map"
+      />
     </div>
   );
 }

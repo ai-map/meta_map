@@ -1,8 +1,8 @@
 import {
-  ClusterManager,
-  ClusterOptions,
   Cluster,
   ClusterBasePoint,
+  ClusterManager,
+  ClusterOptions,
 } from "./cluster_manager";
 
 /**
