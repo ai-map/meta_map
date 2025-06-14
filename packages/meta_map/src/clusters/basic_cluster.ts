@@ -25,7 +25,7 @@ export class BasicClusterManager<
    */
   protected performClustering(
     points: T[],
-    options: ClusterOptions
+    _options: ClusterOptions
   ): Cluster<T>[] {
     console.log("🏗️ 使用基础聚类管理器 - 距离小于10米时聚类", {
       points: points.length,

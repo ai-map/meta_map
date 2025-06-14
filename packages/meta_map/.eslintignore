@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+*.d.ts
+*.min.js
+*.bundle.js
+coverage/
+.nyc_output/
+.cache/
+*.config.js
+*.config.ts
+vite.config.*
+webpack.config.* 

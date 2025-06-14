@@ -18,16 +18,23 @@ export const ToastNotification: React.FC<ToastNotificationProps> = ({
   onRemoveToast,
 }) => {
   useEffect(() => {
+    const timers: number[] = [];
+    
     toasts.forEach((toast, index) => {
       if (toast.duration && toast.duration > 0) {
         const timer = setTimeout(() => {
           onRemoveToast(index);
           toast.onClose?.();
         }, toast.duration);
-
-        return () => clearTimeout(timer);
+        
+        timers.push(timer);
       }
     });
+
+    // 清理函数
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
   }, [toasts, onRemoveToast]);
 
   return (

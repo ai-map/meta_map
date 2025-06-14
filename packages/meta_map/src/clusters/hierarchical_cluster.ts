@@ -144,7 +144,7 @@ export class HierarchicalClusterManager<
     const processed = new Set<Cluster<T>>();
 
     for (let i = 0; i < clusters.length; i++) {
-      if (processed.has(clusters[i])) continue;
+      if (processed.has(clusters[i])) {continue;}
 
       let currentCluster = clusters[i];
       processed.add(currentCluster);
@@ -155,7 +155,7 @@ export class HierarchicalClusterManager<
         merged = false;
 
         for (let j = 0; j < clusters.length; j++) {
-          if (processed.has(clusters[j])) continue;
+          if (processed.has(clusters[j])) {continue;}
 
           // 计算两个聚类中心之间的地理距离（米）
           const distance = this.calculateHaversineDistance(

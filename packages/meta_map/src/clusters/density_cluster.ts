@@ -129,7 +129,7 @@ export class DensityClusterManager<
    */
   private getNeighbors(centerPoint: T, allPoints: T[], radius: number): T[] {
     return allPoints.filter((point) => {
-      if (point === centerPoint) return false;
+      if (point === centerPoint) {return false;}
       return this.calculateHaversineDistance(centerPoint, point) <= radius;
     });
   }

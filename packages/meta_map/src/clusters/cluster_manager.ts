@@ -11,7 +11,8 @@ export interface ClusterBasePoint {
   x: number; // 经度 (longitude)
   y: number; // 纬度 (latitude)
   weight?: number;
-  data?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data?: Record<string, any>;
   id?: string | number; // 用于唯一标识点
 }
 
