@@ -216,7 +216,7 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const boundsChangeTimerRef = useRef<NodeJS.Timeout | null>(null); // 防抖定时器
+  const boundsChangeTimerRef = useRef<any>(null); // 防抖定时器
   const clusterManagerRef = useRef<ClusterManager<ClusterItem> | null>(null);
   const processingMarkerTapRef = useRef<boolean>(false); // 防止重复处理点击事件
 

@@ -26,7 +26,7 @@ export class HierarchicalClusterManager<
       return [];
     }
 
-    const { radius = 80, minPoints = 2 } = options;
+    const { minPoints = 2 } = options;
 
     // 如果点数太少，直接返回单个聚类
     if (points.length < minPoints) {

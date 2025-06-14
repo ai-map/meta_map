@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 
 // 从 dist 目录直接导入组件
-import { ClusterAlgorithmType, MapViewer, validateMetaMapData } from './dist/index.js';
-
-
+import { ClusterAlgorithmType, MapViewer, validateMetaMapData } from './dist/index.d.ts';
 
 // 加载新华宠友地图数据
 const loadXinhuaPetData = async () => {
@@ -29,11 +27,9 @@ function App() {
   const [debugInfo, setDebugInfo] = useState('');
 
   // 聚类参数控制
-  const [clusterAlgorithm, setClusterAlgorithm] = useState(ClusterAlgorithmType.HIERARCHICAL);
-  const [minClusterSize, setMinClusterSize] = useState(2);
-  const [clusterDistance, setClusterDistance] = useState(100);
-
-
+  const [clusterAlgorithm] = useState(ClusterAlgorithmType.HIERARCHICAL);
+  const [minClusterSize] = useState(2);
+  const [clusterDistance] = useState(100);
 
   // 加载数据
   useEffect(() => {
