@@ -26,7 +26,8 @@ export class DensityClusterManager<
       return [];
     }
 
-    const { radius = 80, minPoints = 3 } = options;
+    const radius = options.radius || 80;
+    const minPoints = Math.max(options.minPoints || 3, 3);
 
     // 点的状态：0=未处理，1=已处理（在聚类中），-1=噪声点
     const pointStatus = new Map<T, number>();
@@ -129,7 +130,9 @@ export class DensityClusterManager<
    */
   private getNeighbors(centerPoint: T, allPoints: T[], radius: number): T[] {
     return allPoints.filter((point) => {
-      if (point === centerPoint) {return false;}
+      if (point === centerPoint) {
+        return false;
+      }
       return this.calculateHaversineDistance(centerPoint, point) <= radius;
     });
   }
