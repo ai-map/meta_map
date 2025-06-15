@@ -10,19 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ai-map/meta_map": "file:../meta_map",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "leaflet": "^1.9.4"
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
+    "react-leaflet": "^4.2.1",
+    "tlbs-map-react": "^1.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
+    "@types/leaflet": "^1.9.8",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
+    "typescript": "^5.0.0",
     "vite": "^5.2.0"
   }
 } 

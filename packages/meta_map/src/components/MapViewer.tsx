@@ -265,24 +265,30 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   const [filterExpanded, setFilterExpanded] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [mapLoading, setMapLoading] = useState<boolean>(true); // 地图加载状态
-  const [mapInited, setMapInited] = useState<boolean>(false); // 地图初始化状态
 
   // 地图相关状态
-  const [center, setCenter] = useState<{
-    lat: number;
-    lng: number;
-  }>({ ...initialCenter });
+  const [center, setCenter] = useState<Coordinate>({ ...initialCenter });
   const [zoom, setZoom] = useState<number>(initialZoom);
   const [markers, setMarkers] = useState<Marker[]>([]); // 地图标记状态
   const [clusterLabels, setClusterLabels] = useState<ClusterLabel[]>([]); // 聚类数字标签
 
-  // 聚类配置参数 - 使用 ref 管理，避免不必要的重新渲染
+  // 聚类配置参数 - 使用 ref 管理
+  const clusterManagerRef = useRef<ClusterManager<ClusterItem> | null>(null);
   const clusterAlgorithmRef = useRef<ClusterAlgorithmType>(clusterAlgorithm);
   const clusterMinPointsRef = useRef<number>(minClusterSize);
   const clusterFactorRef = useRef<number>(1.2);
+  const clusterRadiusRef = useRef<number>(clusterDistance); // 聚类半径（米）
+
+  // Point 相关的 ref，避免不必要的重新渲染
+  const pointsRef = useRef<MapPoint[]>([]); // 只和 metaMap 有关
+  const filteredPointsRef = useRef<MapPoint[] | null>(null); // 和 metaMap 和 filterStates 有关
 
   // 地图变量
   const clusterMapRef = useRef<{ [key: string]: MapPoint[] }>({});
+  const markersRef = useRef<Marker[]>([]);
+  const clusterLabelsRef = useRef<ClusterLabel[]>([]);
+  const selectedPointIndexRef = useRef<number>(0); // 记录被地图或列表选中的 point，数值为原始分配 index，0 代表未选中
+  const selectedMarkerIdRef = useRef<string>(""); // 记录选中的 marker ID 或 cluster ID，空字符串代表未选中
 
   // 聚类列表相关状态
   const [clusterListVisible, setClusterListVisible] = useState<boolean>(false);
@@ -290,7 +296,6 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   const [selectedClusterPointIndex, setSelectedClusterPointIndex] =
     useState<number>(-1);
   const [currentClusterId, setCurrentClusterId] = useState<string>("");
-
   // 选中的点位索引（在普通点位列表中的索引）
   const [selectedListPointIndex, setSelectedListPointIndex] =
     useState<number>(-1);
@@ -301,26 +306,8 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const markerRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const boundsChangeTimerRef = useRef<any>(null); // 防抖定时器
-  const containerRef = useRef<HTMLDivElement>(null);
-  const clusterManagerRef = useRef<ClusterManager<ClusterItem> | null>(null);
   const processingMarkerTapRef = useRef<boolean>(false); // 防止重复处理点击事件
-
-  const clusterRadiusRef = useRef<number>(clusterDistance); // 聚类半径（米）
-
-  // Point 相关的 ref，避免不必要的重新渲染
-  const pointsRef = useRef<MapPoint[]>([]);
-  const filteredPointsRef = useRef<MapPoint[] | null>(null);
-
-  // Markers 和 ClusterLabels 相关的 ref，避免闭包问题
-  const markersRef = useRef<Marker[]>([]);
-  const clusterLabelsRef = useRef<ClusterLabel[]>([]);
-
-  // 新增的选中状态 ref
-  const selectedPointIndexRef = useRef<number>(0); // 记录被地图或列表选中的 point，数值为原始分配 index，0 代表未选中
-  const selectedMarkerIdRef = useRef<string>(""); // 记录选中的 marker ID 或 cluster ID，空字符串代表未选中
 
   // tlbs-map-react 封装得稀烂
   const updateMapBounds = (
@@ -480,7 +467,7 @@ export const MapViewer: React.FC<MapViewerProps> = ({
 
       return true;
     });
-  }, [filterState, pointsRef]);
+  }, [filterState]);
 
   const getFilteredPoints = useCallback(() => {
     if (filteredPointsRef.current) {
@@ -767,9 +754,7 @@ export const MapViewer: React.FC<MapViewerProps> = ({
 
     clearSelectedMarker();
     applyMarkerStylesUpdate();
-
-    clearClusterSelection();
-  }, [clearSelectedMarker, mapData.center, mapData.zoom]);
+  }, [clearSelectedMarker, mapData]);
 
   // 导航到位置
   const navigateToLocation = () => {
@@ -1100,9 +1085,6 @@ export const MapViewer: React.FC<MapViewerProps> = ({
       (window as any)["tencentMap"] = map;
     }
 
-    // 设置地图初始化状态
-    setMapInited(true);
-
     resetMap();
     // 关闭地图loading状态
     setMapLoading(false);
@@ -1190,24 +1172,16 @@ export const MapViewer: React.FC<MapViewerProps> = ({
         exclusive: initialExclusiveState,
       });
 
-      // 获取筛选后的数据并执行聚类
-      updateClusters();
-
-      updateMapBounds(mapData.center, mapData.zoom[0]);
+      resetMap();
 
       setLoading(false);
-
-      // 如果地图已经初始化，则需要重置地图状态
-      if (mapInited) {
-        resetMap();
-      }
-
       console.log("📊 地图数据初始化完成");
     } catch (error) {
       console.error("地图数据初始化失败:", error);
       setLoading(false);
+      showToast("地图数据初始化失败", "error");
     }
-  }, [mapData, mapInited, resetMap, updateClusters]);
+  }, [mapData, resetMap]);
 
   // 检查 mapData 变化，触发数据初始化
   useEffect(() => {
@@ -1220,7 +1194,7 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={"container"}>
+    <div className={"container"}>
       {/* 地图加载遮罩层 */}
       {mapLoading && (
         <div className="map-loading-overlay">
@@ -1373,7 +1347,6 @@ export const MapViewer: React.FC<MapViewerProps> = ({
                   onMapInited={onMapInited}
                 >
                   <MultiMarker
-                    ref={markerRef}
                     styles={markerStyles}
                     geometries={markers}
                     onClick={markerTap}
