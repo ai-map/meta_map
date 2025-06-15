@@ -750,7 +750,7 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   // 重置地图
   const resetMap = useCallback(() => {
     // TODO: 这里地图更新会出发两次, bounds 一次, marker 一次
-    updateMapBounds(mapData.center, mapData.zoom[0]);
+    updateMapBounds(mapData.center, mapData.zoom);
 
     clearSelectedMarker();
     applyMarkerStylesUpdate();
@@ -759,11 +759,10 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   // 导航到位置
   const navigateToLocation = () => {
     const selectedPoint = getSelectedPoint();
+
     if (selectedPoint) {
-      const url = `https://www.amap.com/dir?to=${selectedPoint.longitude},${
-        selectedPoint.latitude
-      }&name=${encodeURIComponent(selectedPoint.name)}`;
-      window.open(url, "_blank");
+      const amap = `http://uri.amap.com/marker?position=${selectedPoint.longitude},${selectedPoint.latitude}&name=${selectedPoint.name}&coordinate=gaode&callnative=1`;
+      window.open(amap, "_blank");
     }
   };
 

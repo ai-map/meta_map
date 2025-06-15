@@ -1,6 +1,10 @@
 # Meta Map Utils Python版本依赖
 
-# 核心依赖（Python标准库已满足基本需求）
+# 核心依赖
+jsonschema>=4.0.0  # JSON Schema 验证（必需）
+
+# 可选依赖
+requests>=2.25.0   # 如果需要从URL加载数据
 # typing_extensions>=4.0.0  # 如果需要支持Python 3.8以下
 
 # 开发依赖
@@ -8,8 +12,4 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 black>=22.0.0
 flake8>=5.0.0
-mypy>=1.0.0
-
-# 可选依赖
-jsonschema>=4.0.0  # 用于更严格的JSON Schema验证
-requests>=2.25.0   # 如果需要从URL加载数据 
+mypy>=1.0.0 

@@ -1,0 +1,27 @@
+{
+  "name": "meta-map-monorepo",
+  "version": "0.4.0",
+  "description": "Meta Map 项目单体仓库",
+  "private": true,
+  "scripts": {
+    "version:sync": "node scripts/sync-version.js",
+    "version:check": "node -e \"const config = require('./version.json'); console.log('当前版本:', config.version);\"",
+    "version:set": "node -e \"const fs = require('fs'); const config = require('./version.json'); config.version = process.argv[1]; fs.writeFileSync('version.json', JSON.stringify(config, null, 2)); console.log('版本已设置为:', process.argv[1]);\" --"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  },
+  "keywords": [
+    "meta-map",
+    "monorepo",
+    "map",
+    "visualization",
+    "clustering"
+  ],
+  "author": "ai-map",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+} 

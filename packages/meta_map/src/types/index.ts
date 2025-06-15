@@ -32,7 +32,7 @@ export interface MetaMapData {
   description: string;
   origin: string;
   center: Coordinate;
-  zoom: [number, number, number]; // [默认, 最小, 最大]
+  zoom: number;
   filter?: Filter;
   data: DataPoint[];
 }

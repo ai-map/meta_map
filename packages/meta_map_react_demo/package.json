@@ -1,6 +1,6 @@
 {
   "name": "react-demo",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "React Scripts 版本的 Meta Map 组件演示项目，支持联调热更新。",
   "private": true,
   "dependencies": {

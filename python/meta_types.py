@@ -2,8 +2,8 @@
 Meta Map 数据类型定义
 """
 
-from typing import Dict, List, Optional, TypedDict, Union
 from dataclasses import dataclass
+from typing import Dict, List, Optional, TypedDict
 
 
 class Coordinate(TypedDict):
@@ -47,18 +47,3 @@ class ValidationResult:
     """验证结果"""
     valid: bool
     errors: Optional[List[str]] = None
-
-
-@dataclass
-class MapStatistics:
-    """地图统计信息"""
-    total_points: int
-    tags: Dict[str, int]
-    coordinates: Dict[str, float]  # northernmost, southernmost, easternmost, westernmost
-
-
-class FilterCriteria(TypedDict, total=False):
-    """过滤条件"""
-    tags: Optional[List[str]]
-    name: Optional[str]
-    address: Optional[str] 

@@ -1,3 +1,11 @@
+### v0.5.0
+- 增加了 eslint
+- 简化了 zoom，仅保留 Initial zoom，去除了 min max zoom
+- 修改了包的结构
+
+### v0.4.0
+- 增加了 react demo
+
 ### v0.3.0
 - 重构了代码，优化了导出
 

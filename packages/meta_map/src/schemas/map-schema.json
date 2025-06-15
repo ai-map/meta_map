@@ -44,15 +44,9 @@
       "additionalProperties": false
     },
     "zoom": {
-      "type": "array",
-      "description": "缩放级别配置 [默认, 最小, 最大]",
-      "items": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 20
-      },
-      "minItems": 3,
-      "maxItems": 3
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
     },
     "filter": {
       "type": "object",
